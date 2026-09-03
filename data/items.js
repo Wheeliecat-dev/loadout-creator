@@ -20,6 +20,9 @@ const RENDER_ORDER = [
   "eyewear",
   "headwear",
   "headwearAccessories",
+  // Last = topmost. A backpack sits on top of literally everything else in
+  // both views (even headwear), unlike ordinary gear.
+  "vestRearAcc",
 ];
 
 // Left-hand menu structure. Each group maps to one or more slots.
@@ -48,8 +51,10 @@ const GROUPS = [
     label: "Belt",
     slots: [
       { id: "belt", label: "Belt", type: "single" },
-      { id: "beltAccessories", label: "Pouches", type: "multi" },
-      { id: "beltRear", label: "Rear Accessory", type: "single" },
+      // Both of these attach to the belt itself, so they're locked out
+      // (and auto-unequipped) whenever no belt is worn — see `dependsOn`.
+      { id: "beltAccessories", label: "Pouches", type: "multi", dependsOn: "belt" },
+      { id: "beltRear", label: "Rear Accessory", type: "single", dependsOn: "belt" },
     ],
   },
   {
@@ -58,6 +63,9 @@ const GROUPS = [
     slots: [
       { id: "vest", label: "Plate Carrier / Chest Rig", type: "single" },
       { id: "vestAccessories", label: "MOLLE Pouches", type: "multi" },
+      // Renders above literally everything (see RENDER_ORDER) — a
+      // backpack sits over headwear too, not just the torso layers.
+      { id: "vestRearAcc", label: "Backpack", type: "single" },
     ],
   },
   {
@@ -188,6 +196,19 @@ const DEFAULT_ITEMS = {
       name: "M3MP6",
       src: "assets/vest/m3mp6_front.png",
       srcBack: "assets/vest/m3mp6_back.png",
+    },
+  ],
+  // Rear-only for now — only shows/selectable in Rear view (no
+  // peekBehindBody here: unlike the seating pad this isn't meant to be
+  // glimpsed past the silhouette, it's meant to be properly visible, which
+  // needs the strap art). Add `src` once the front straps exist and it'll
+  // start showing in Front view too automatically, still on top of
+  // everything per RENDER_ORDER.
+  vestRearAcc: [
+    {
+      id: "vestrearacc-mm14-backpack",
+      name: "MM14 Backpack",
+      srcBack: "assets/VestRearAcc/mm14_backpack_rear.png",
     },
   ],
   headwear: [

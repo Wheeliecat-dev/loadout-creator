@@ -311,6 +311,19 @@ body {
   color: var(--text);
 }
 
+.admin-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.admin-range-value {
+  width: 32px;
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
 .admin-buttons {
   gap: 8px;
 }

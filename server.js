@@ -70,8 +70,11 @@ function handleSaveTransforms(req, res) {
       "//\n" +
       "// Gear art doesn't all share the base body's canvas size/framing, so each\n" +
       "// item can be nudged/scaled to line up. Keyed by item id -> per-view\n" +
-      "// { x, y, scale } (x/y are percent offsets, scale is a multiplier; the\n" +
-      "// default when an item has no entry is { x: 0, y: 0, scale: 1 }).\n" +
+      "// { x, y, scale, hue, saturate, brightness, shadow } (x/y are percent\n" +
+      "// offsets, scale/saturate/brightness are multipliers, hue is degrees,\n" +
+      "// shadow is the drop-shadow's opacity 0-1; defaults are\n" +
+      "// { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1, shadow: 0.35 }\n" +
+      "// for any field an entry omits).\n" +
       "//\n" +
       "// Written by Admin Mode's \"Save site-wide\" button (via server.js) — hand\n" +
       "// edits are fine too, but let the tool do it when you can.\n" +

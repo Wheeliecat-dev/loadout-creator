@@ -2,8 +2,11 @@
 //
 // Gear art doesn't all share the base body's canvas size/framing, so each
 // item can be nudged/scaled to line up. Keyed by item id -> per-view
-// { x, y, scale } (x/y are percent offsets, scale is a multiplier; the
-// default when an item has no entry is { x: 0, y: 0, scale: 1 }).
+// { x, y, scale, hue, saturate, brightness, shadow } (x/y are percent
+// offsets, scale/saturate/brightness are multipliers, hue is degrees,
+// shadow is the drop-shadow's opacity 0-1; defaults are
+// { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1, shadow: 0.35 }
+// for any field an entry omits).
 //
 // Written by Admin Mode's "Save site-wide" button (via server.js) — hand
 // edits are fine too, but let the tool do it when you can.
@@ -111,8 +114,8 @@ const ITEM_TRANSFORMS = {
   },
   "headwear-kaska": {
     "front": {
-      "x": 1.041666666666667,
-      "y": -39.239298039503645,
+      "x": 1.226851851851852,
+      "y": -38.61272242210638,
       "scale": 0.19999999999999937,
       "hue": 0,
       "saturate": 1,

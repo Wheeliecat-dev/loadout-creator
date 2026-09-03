@@ -17,11 +17,21 @@
   const ZOOM_STEP = 0.1;
 
   const SLOT_TYPE_BY_ID = {};
+  const SLOT_DEF_BY_ID = {};
   GROUPS.forEach((group) => {
     group.slots.forEach((slot) => {
       SLOT_TYPE_BY_ID[slot.id] = slot.type;
+      SLOT_DEF_BY_ID[slot.id] = slot;
     });
   });
+
+  // Slots that depend on another slot (via `dependsOn`) — e.g. belt pouches
+  // and the belt's rear accessory both need a belt equipped first.
+  const DEPENDENT_SLOTS = Object.values(SLOT_DEF_BY_ID).filter((s) => s.dependsOn);
+
+  function isSlotUnlocked(slot) {
+    return !slot.dependsOn || !!state.selection[slot.dependsOn];
+  }
 
   function getBaseItem() {
     return (DEFAULT_ITEMS.base && DEFAULT_ITEMS.base[0]) || null;
@@ -94,7 +104,18 @@
     return state.selection[slotId] === itemId;
   }
 
+  // Unequips anything that depends on `slotId` — called after that slot
+  // itself just became empty, since e.g. a seating pad can't stay attached
+  // once the belt it hangs off of is gone.
+  function clearDependents(slotId) {
+    DEPENDENT_SLOTS.filter((s) => s.dependsOn === slotId).forEach((s) => {
+      state.selection[s.id] = s.type === "multi" ? [] : null;
+    });
+  }
+
   function toggleSelect(slotId, itemId) {
+    if (!isSlotUnlocked(SLOT_DEF_BY_ID[slotId])) return;
+
     const type = SLOT_TYPE_BY_ID[slotId];
     if (type === "multi") {
       const current = state.selection[slotId] || [];
@@ -103,6 +124,7 @@
         : [...current, itemId];
     } else {
       state.selection[slotId] = state.selection[slotId] === itemId ? null : itemId;
+      if (state.selection[slotId] === null) clearDependents(slotId);
     }
     persistSelection();
     renderStage();
@@ -125,12 +147,15 @@
 
   // ---------- Transform helpers (admin calibration) ----------
 
-  const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1 };
+  const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1, shadow: 0.35 };
 
-  // Every layer casts the same subtle shadow onto whatever is beneath it —
-  // a fixed visual, not admin-tunable. Filter order matters: drop-shadow
-  // first so it isn't itself hue/brightness-shifted by the grading below.
-  const LAYER_SHADOW = "drop-shadow(0 3px 5px rgba(0,0,0,0.35))";
+  // `shadow` is the drop-shadow's opacity (0 = none), admin-tunable per
+  // item. Blur/offset stay fixed — only intensity is exposed. Filter order
+  // matters: drop-shadow first so it isn't itself hue/brightness-shifted by
+  // the grading that follows it.
+  function shadowFilter(intensity) {
+    return `drop-shadow(0 3px 5px rgba(0,0,0,${intensity}))`;
+  }
 
   function getTransform(itemId, view) {
     const t = state.transforms[itemId] && state.transforms[itemId][view];
@@ -153,7 +178,7 @@
   // Admin Mode, and needs no server-side processing.
   function layerStyle(itemId, view) {
     const t = getTransform(itemId, view);
-    const filter = `${LAYER_SHADOW} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
+    const filter = `${shadowFilter(t.shadow)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
     return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
@@ -234,6 +259,16 @@
       slotTitle.textContent = slot.label + (slot.type === "multi" ? " (multi-select)" : "");
       slotEl.appendChild(slotTitle);
 
+      if (!isSlotUnlocked(slot)) {
+        const locked = document.createElement("p");
+        locked.className = "slot-empty";
+        const parentLabel = (SLOT_DEF_BY_ID[slot.dependsOn] || {}).label || slot.dependsOn;
+        locked.textContent = `Equip a ${parentLabel} first.`;
+        slotEl.appendChild(locked);
+        slotsContainerEl.appendChild(slotEl);
+        return;
+      }
+
       const grid = document.createElement("div");
       grid.className = "item-grid";
 
@@ -274,7 +309,7 @@
 
   function peekLayerStyle(key) {
     const t = getTransform(key, "rear"); // only a rear calibration exists for these
-    const filter = `${LAYER_SHADOW} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness * PEEK_DARKEN})`;
+    const filter = `${shadowFilter(t.shadow)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness * PEEK_DARKEN})`;
     return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
@@ -402,6 +437,8 @@
   const adminHueEl = document.getElementById("admin-hue");
   const adminSaturateEl = document.getElementById("admin-saturate");
   const adminBrightnessEl = document.getElementById("admin-brightness");
+  const adminShadowEl = document.getElementById("admin-shadow");
+  const adminShadowValueEl = document.getElementById("admin-shadow-value");
   const adminResetItemBtn = document.getElementById("admin-reset-item-btn");
   const adminSaveBtn = document.getElementById("admin-save-btn");
   const adminSaveStatusEl = document.getElementById("admin-save-status");
@@ -447,12 +484,14 @@
       adminHueEl,
       adminSaturateEl,
       adminBrightnessEl,
+      adminShadowEl,
       adminResetItemBtn,
     ];
     if (!item) {
       adminItemNameEl.textContent = "—";
       fields.forEach((el) => (el.disabled = true));
       fields.forEach((el) => el !== adminResetItemBtn && (el.value = ""));
+      adminShadowValueEl.textContent = "";
       return;
     }
     const t = getTransform(item.transformKey || item.id, state.view);
@@ -464,6 +503,8 @@
     adminHueEl.value = t.hue;
     adminSaturateEl.value = t.saturate;
     adminBrightnessEl.value = t.brightness;
+    adminShadowEl.value = t.shadow;
+    adminShadowValueEl.textContent = t.shadow.toFixed(2);
   }
 
   function findItemAnywhere(itemId) {
@@ -542,6 +583,10 @@
   adminHueEl.addEventListener("input", () => applyNumericEdit("hue", adminHueEl.value));
   adminSaturateEl.addEventListener("input", () => applyNumericEdit("saturate", adminSaturateEl.value));
   adminBrightnessEl.addEventListener("input", () => applyNumericEdit("brightness", adminBrightnessEl.value));
+  adminShadowEl.addEventListener("input", () => {
+    applyNumericEdit("shadow", adminShadowEl.value);
+    adminShadowValueEl.textContent = parseFloat(adminShadowEl.value).toFixed(2);
+  });
 
   adminResetItemBtn.addEventListener("click", () => {
     if (!state.selectedItemId) return;
