@@ -129,5 +129,16 @@ const ITEM_TRANSFORMS = {
       "saturate": 1,
       "brightness": 1
     }
+  },
+  "vestrearacc-mm14-backpack": {
+    "rear": {
+      "x": 1.8055555555555585,
+      "y": -14.724527008835722,
+      "scale": 0.3399999999999994,
+      "hue": 0,
+      "saturate": 0.7,
+      "brightness": 0.8,
+      "shadow": 0.75
+    }
   }
 };

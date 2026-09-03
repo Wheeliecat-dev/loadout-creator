@@ -198,16 +198,11 @@ const DEFAULT_ITEMS = {
       srcBack: "assets/vest/m3mp6_back.png",
     },
   ],
-  // Rear-only for now — only shows/selectable in Rear view (no
-  // peekBehindBody here: unlike the seating pad this isn't meant to be
-  // glimpsed past the silhouette, it's meant to be properly visible, which
-  // needs the strap art). Add `src` once the front straps exist and it'll
-  // start showing in Front view too automatically, still on top of
-  // everything per RENDER_ORDER.
   vestRearAcc: [
     {
       id: "vestrearacc-mm14-backpack",
       name: "MM14 Backpack",
+      src: "assets/VestRearAcc/mm14_backpack_front.png",
       srcBack: "assets/VestRearAcc/mm14_backpack_rear.png",
     },
   ],
