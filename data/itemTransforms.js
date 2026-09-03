@@ -15,7 +15,11 @@ const ITEM_TRANSFORMS = {
     "front": {
       "x": 1.1111111111111112,
       "y": -14.10244215448829,
-      "scale": 0.43
+      "scale": 0.43,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 1
     },
     "rear": {
       "x": 1.6666666666666665,
@@ -42,12 +46,20 @@ const ITEM_TRANSFORMS = {
     "front": {
       "x": 1.1111111111111112,
       "y": -15.096507330445212,
-      "scale": 0.47999999999999987
+      "scale": 0.47999999999999987,
+      "hue": 0,
+      "saturate": 0.6,
+      "brightness": 1,
+      "shadow": 0.35
     },
     "rear": {
       "x": 1.3888888888888888,
       "y": -16.193014660890427,
-      "scale": 0.5199999999999999
+      "scale": 0.5199999999999999,
+      "hue": 0,
+      "saturate": 0.55,
+      "brightness": 1,
+      "shadow": 0.35
     }
   },
   "top-mm14-jacket": {
@@ -139,6 +151,15 @@ const ITEM_TRANSFORMS = {
       "saturate": 0.7,
       "brightness": 0.8,
       "shadow": 0.75
+    },
+    "front": {
+      "x": 1.2500000000000004,
+      "y": -24.12316126979466,
+      "scale": 0.49999999999999956,
+      "hue": 0,
+      "saturate": 0.6,
+      "brightness": 1,
+      "shadow": 0.6
     }
   }
 };
