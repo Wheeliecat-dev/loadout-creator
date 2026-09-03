@@ -122,6 +122,14 @@ const DEFAULT_ITEMS = {
       srcBack: "assets/Bottom/mm14_uniform_back.png",
     },
   ],
+  belt: [
+    {
+      id: "belt-mm14-rps",
+      name: "MM14 RPS",
+      src: "assets/Belt/mm14_rps_front.png",
+      srcBack: "assets/Belt/mm14_rps_back.png",
+    },
+  ],
   vest: [
     {
       id: "vest-m3mp6",
