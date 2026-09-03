@@ -119,9 +119,16 @@
 
   // ---------- Transform helpers (admin calibration) ----------
 
+  const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1 };
+
+  // Every layer casts the same subtle shadow onto whatever is beneath it —
+  // a fixed visual, not admin-tunable. Filter order matters: drop-shadow
+  // first so it isn't itself hue/brightness-shifted by the grading below.
+  const LAYER_SHADOW = "drop-shadow(0 3px 5px rgba(0,0,0,0.35))";
+
   function getTransform(itemId, view) {
     const t = state.transforms[itemId] && state.transforms[itemId][view];
-    return t ? { x: t.x || 0, y: t.y || 0, scale: t.scale || 1 } : { x: 0, y: 0, scale: 1 };
+    return t ? { ...DEFAULT_TRANSFORM, ...t } : { ...DEFAULT_TRANSFORM };
   }
 
   function setTransform(itemId, view, patch) {
@@ -133,9 +140,15 @@
     if (state.transforms[itemId]) delete state.transforms[itemId][state.view];
   }
 
+  // Per-item color grading (hue/saturate/brightness) so gear rendered with
+  // mismatched lighting/tone can be nudged toward a common palette. It's a
+  // CSS filter, not real image reprocessing, so it's a rough "kinda match"
+  // rather than a true color transfer — but it's cheap, live-adjustable in
+  // Admin Mode, and needs no server-side processing.
   function layerStyle(itemId, view) {
     const t = getTransform(itemId, view);
-    return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale});`;
+    const filter = `${LAYER_SHADOW} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
+    return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
   // Color/pattern variants share one item's calibration via `transformKey`
@@ -249,12 +262,41 @@
     });
   }
 
+  // Darker than the item's normal grading, on top of it — simulates being
+  // glimpsed past the body's silhouette rather than lit head-on.
+  const PEEK_DARKEN = 0.55;
+
+  function peekLayerStyle(key) {
+    const t = getTransform(key, "rear"); // only a rear calibration exists for these
+    const filter = `${LAYER_SHADOW} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness * PEEK_DARKEN})`;
+    return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale}); filter: ${filter};`;
+  }
+
   function renderStage() {
     stageContentEl.innerHTML = "";
     stageEl.classList.toggle("admin", state.adminMode);
     stageEl.classList.toggle("has-selection", state.adminMode && !!state.selectedItemId);
 
     const layers = equippedLayers();
+
+    // Rear-only accessories flagged `peekBehindBody` (e.g. a seating pad
+    // hanging off the back of a belt) still show in Front view — pushed
+    // behind the base body and darkened, as if seen past the silhouette
+    // rather than properly lit and in front.
+    if (state.view === "front") {
+      layers
+        .filter(({ item }) => item.peekBehindBody && item.srcBack)
+        .forEach(({ item, slotId }) => {
+          const img = document.createElement("img");
+          img.className = "layer layer-peek";
+          img.src = item.srcBack;
+          img.alt = item.name;
+          img.dataset.itemId = item.id;
+          img.dataset.slot = slotId;
+          img.style.cssText = peekLayerStyle(item.transformKey || item.id);
+          stageContentEl.appendChild(img);
+        });
+    }
 
     layers.forEach(({ item, slotId }) => {
       const src = state.view === "rear" ? item.srcBack : item.src;
@@ -318,6 +360,9 @@
   const adminXEl = document.getElementById("admin-x");
   const adminYEl = document.getElementById("admin-y");
   const adminScaleEl = document.getElementById("admin-scale");
+  const adminHueEl = document.getElementById("admin-hue");
+  const adminSaturateEl = document.getElementById("admin-saturate");
+  const adminBrightnessEl = document.getElementById("admin-brightness");
   const adminResetItemBtn = document.getElementById("admin-reset-item-btn");
   const adminSaveBtn = document.getElementById("admin-save-btn");
   const adminSaveStatusEl = document.getElementById("admin-save-status");
@@ -356,13 +401,19 @@
     });
 
     const item = state.selectedItemId && findItemAnywhere(state.selectedItemId);
-    const fields = [adminXEl, adminYEl, adminScaleEl, adminResetItemBtn];
+    const fields = [
+      adminXEl,
+      adminYEl,
+      adminScaleEl,
+      adminHueEl,
+      adminSaturateEl,
+      adminBrightnessEl,
+      adminResetItemBtn,
+    ];
     if (!item) {
       adminItemNameEl.textContent = "—";
       fields.forEach((el) => (el.disabled = true));
-      adminXEl.value = "";
-      adminYEl.value = "";
-      adminScaleEl.value = "";
+      fields.forEach((el) => el !== adminResetItemBtn && (el.value = ""));
       return;
     }
     const t = getTransform(item.transformKey || item.id, state.view);
@@ -371,6 +422,9 @@
     adminXEl.value = t.x;
     adminYEl.value = t.y;
     adminScaleEl.value = t.scale;
+    adminHueEl.value = t.hue;
+    adminSaturateEl.value = t.saturate;
+    adminBrightnessEl.value = t.brightness;
   }
 
   function findItemAnywhere(itemId) {
@@ -446,6 +500,9 @@
   adminXEl.addEventListener("input", () => applyNumericEdit("x", adminXEl.value));
   adminYEl.addEventListener("input", () => applyNumericEdit("y", adminYEl.value));
   adminScaleEl.addEventListener("input", () => applyNumericEdit("scale", adminScaleEl.value));
+  adminHueEl.addEventListener("input", () => applyNumericEdit("hue", adminHueEl.value));
+  adminSaturateEl.addEventListener("input", () => applyNumericEdit("saturate", adminSaturateEl.value));
+  adminBrightnessEl.addEventListener("input", () => applyNumericEdit("brightness", adminBrightnessEl.value));
 
   adminResetItemBtn.addEventListener("click", () => {
     if (!state.selectedItemId) return;

@@ -242,6 +242,12 @@ body {
   font-size: 12px;
 }
 
+.admin-hint-grading {
+  margin: 12px 0 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
 .admin-layer-list {
   display: flex;
   flex-direction: column;
@@ -318,6 +324,7 @@ body {
   background: var(--panel);
   border-left: 1px solid var(--border);
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
 }
 
@@ -340,12 +347,13 @@ body {
 
 .item-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
 .item-tile {
   position: relative;
+  min-width: 0; /* let long item names ellipsize instead of blowing out the grid track */
   background: var(--panel-alt);
   border: 2px solid transparent;
   border-radius: 8px;

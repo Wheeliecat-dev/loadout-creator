@@ -86,21 +86,27 @@ const GROUPS = [
 ];
 
 // Optional permanent presets. Keyed by slot id -> array of items.
-// Each item is { id, name, src, srcBack, transformKey }.
+// Each item is { id, name, src, srcBack, transformKey, peekBehindBody }.
 //
 // - `srcBack` is optional — only needed if the item looks different from
 //   behind (e.g. a backpack, or a plate carrier's rear panel). Items
 //   without a srcBack simply don't render while viewing from the rear.
 // - A rear-only item (nothing hangs off the front) just omits `src` and
 //   sets `srcBack` — it then only shows up, and is only selectable, in
-//   Rear view.
-// - `transformKey` is optional. Admin-mode calibration (position/scale) is
-//   normally keyed by the item's own `id`. Set `transformKey` to another
-//   item's id to reuse *its* calibration instead — for color/pattern
-//   variants of the same physical object, which should always sit in
-//   exactly the same spot. Calibrate the first variant, then give every
-//   other variant `transformKey: "<that variant's id>"` and they inherit
-//   it automatically (recalibrating one recalibrates all of them).
+//   Rear view. Set `peekBehindBody: true` on one of these and it *does*
+//   still show in Front view too — pushed behind the base body (so the
+//   body's silhouette occludes it, but it can peek out past the edges)
+//   and darkened, as if glimpsed rather than properly lit. Its position
+//   there always comes from the item's Rear calibration; there's no
+//   separate Front one to tune.
+// - `transformKey` is optional. Admin-mode calibration (position/scale,
+//   and hue/saturation/brightness grading) is normally keyed by the
+//   item's own `id`. Set `transformKey` to another item's id to reuse
+//   *its* calibration instead — for color/pattern variants of the same
+//   physical object, which should always sit in exactly the same spot.
+//   Calibrate the first variant, then give every other variant
+//   `transformKey: "<that variant's id>"` and they inherit it
+//   automatically (recalibrating one recalibrates all of them).
 //
 // Fill these in once final art assets exist (e.g.
 // src: "assets/top/plain_shirt.png").
@@ -151,13 +157,29 @@ const DEFAULT_ITEMS = {
   beltRear: [
     {
       id: "beltrear-seatpad-folded",
-      name: "Seating Pad (Folded)",
+      name: "Seating Pad (Folded, Camo)",
       srcBack: "assets/Belt/seating_pad_folded.png",
+      peekBehindBody: true,
+    },
+    {
+      id: "beltrear-seatpad-folded-coyote",
+      name: "Seating Pad (Folded, Coyote)",
+      srcBack: "assets/Belt/seating_pad_folded_cayote.png",
+      transformKey: "beltrear-seatpad-folded",
+      peekBehindBody: true,
+    },
+    {
+      id: "beltrear-seatpad-folded-olive",
+      name: "Seating Pad (Folded, Olive)",
+      srcBack: "assets/Belt/seating_pad_folded_olive.png",
+      transformKey: "beltrear-seatpad-folded",
+      peekBehindBody: true,
     },
     {
       id: "beltrear-seatpad-unfolded",
       name: "Seating Pad (Unfolded)",
       srcBack: "assets/Belt/seating_pad_unfolded.png",
+      peekBehindBody: true,
     },
   ],
   vest: [
