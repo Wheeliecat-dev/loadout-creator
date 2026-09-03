@@ -144,9 +144,9 @@ const ITEM_TRANSFORMS = {
   },
   "vestrearacc-mm14-backpack": {
     "rear": {
-      "x": 1.8055555555555585,
-      "y": -14.724527008835722,
-      "scale": 0.3399999999999994,
+      "x": 1.8551587301587333,
+      "y": -20.337600248019548,
+      "scale": 0.3199999999999994,
       "hue": 0,
       "saturate": 0.55,
       "brightness": 0.8,
@@ -176,6 +176,46 @@ const ITEM_TRANSFORMS = {
       "x": 0.8838383838383852,
       "y": -13.243530094987637,
       "scale": 0.7799999999999998,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    }
+  },
+  "facewear-balaclava-olive": {
+    "front": {
+      "x": 1.3425925925925926,
+      "y": -37.85561021775135,
+      "scale": 0.17999999999999938,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    },
+    "rear": {
+      "x": 1.2499999999999998,
+      "y": -37.96003948731755,
+      "scale": 0.17999999999999938,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    }
+  },
+  "facewear-balaclava-coyote": {
+    "rear": {
+      "x": 1.2499999999999998,
+      "y": -37.96003948731755,
+      "scale": 0.17999999999999938,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    },
+    "front": {
+      "x": 1.3425925925925926,
+      "y": -37.85561021775135,
+      "scale": 0.17999999999999938,
       "hue": 0,
       "saturate": 1,
       "brightness": 1,

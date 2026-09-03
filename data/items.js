@@ -10,13 +10,16 @@ const RENDER_ORDER = [
   "footwear",
   "bottom",
   "bottomAccessories",
+  // Balaclava/mask tucks under the shirt collar and under the helmet, so
+  // it draws before both — not grouped with eyewear/headwear even though
+  // it's picked from a similar spot in the menu.
+  "facewear",
   "top",
   "belt",
   "beltAccessories",
   "beltRear",
   "vest",
   "vestAccessories",
-  "facewear",
   "eyewear",
   "headwear",
   "headwearAccessories",
@@ -202,6 +205,20 @@ const DEFAULT_ITEMS = {
       name: "M3MP6",
       src: "assets/vest/m3mp6_front.png",
       srcBack: "assets/vest/m3mp6_back.png",
+    },
+  ],
+  facewear: [
+    {
+      id: "facewear-balaclava-olive",
+      name: "Balaclava (Olive)",
+      src: "assets/Face/olive_balaclava_front.png",
+      srcBack: "assets/Face/olive_balaclava_rear.png",
+    },
+    {
+      id: "facewear-balaclava-coyote",
+      name: "Balaclava (Coyote)",
+      src: "assets/Face/coyote_balaclava_front.png",
+      srcBack: "assets/Face/coyote_balaclava_rear.png",
     },
   ],
   vestRearAcc: [
