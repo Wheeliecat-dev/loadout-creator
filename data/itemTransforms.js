@@ -102,9 +102,10 @@ const ITEM_TRANSFORMS = {
       "x": 1.7361111111111112,
       "y": 3.524487847859608,
       "scale": 0.27999999999999936,
-      "hue": 9,
-      "saturate": 0.7,
-      "brightness": 1.4
+      "hue": 0,
+      "saturate": 0.65,
+      "brightness": 1.4,
+      "shadow": 0.35
     }
   },
   "beltrear-seatpad-folded": {
@@ -158,7 +159,7 @@ const ITEM_TRANSFORMS = {
       "x": 1.2500000000000004,
       "y": -24.12316126979466,
       "scale": 0.49999999999999956,
-      "hue": 0,
+      "hue": -12,
       "saturate": 0.6,
       "brightness": 1,
       "shadow": 0.6
@@ -189,7 +190,7 @@ const ITEM_TRANSFORMS = {
       "x": 1.3425925925925926,
       "y": -37.85561021775135,
       "scale": 0.17999999999999938,
-      "hue": 0,
+      "hue": -10,
       "saturate": 1,
       "brightness": 1,
       "shadow": 0.35
@@ -218,6 +219,28 @@ const ITEM_TRANSFORMS = {
       "x": 1.3425925925925926,
       "y": -37.85561021775135,
       "scale": 0.17999999999999938,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    }
+  },
+  "vestpatch-front-ua": {
+    "front": {
+      "x": 1.8055555555555587,
+      "y": -24.801951521975056,
+      "scale": 0.07999999999999939,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    }
+  },
+  "vestpatch-rear-ua": {
+    "rear": {
+      "x": 1.4814814814814814,
+      "y": -29.240195478538972,
+      "scale": 0.0999999999999994,
       "hue": 0,
       "saturate": 1,
       "brightness": 1,

@@ -20,12 +20,18 @@ const RENDER_ORDER = [
   "beltRear",
   "vest",
   "vestAccessories",
+  // Front patches sit on top of the vest/pouches but still under the
+  // backpack (which is last, see below).
+  "vestPatchesFront",
   "eyewear",
   "headwear",
   "headwearAccessories",
   // Last = topmost. A backpack sits on top of literally everything else in
   // both views (even headwear), unlike ordinary gear.
   "vestRearAcc",
+  // Rear patches render on top of the backpack itself (e.g. a flag patch
+  // stuck to the pack) — the only rear patch position for now.
+  "vestPatchesRear",
 ];
 
 // Left-hand menu structure. Each group maps to one or more slots.
@@ -66,9 +72,14 @@ const GROUPS = [
     slots: [
       { id: "vest", label: "Plate Carrier / Chest Rig", type: "single" },
       { id: "vestAccessories", label: "MOLLE Pouches", type: "multi" },
+      // Patches attach to the vest, so both need one worn — see
+      // `dependsOn`. Listed either side of Backpack to mirror the
+      // render order: front patches draw under the pack, rear ones over it.
+      { id: "vestPatchesFront", label: "Patches (Front)", type: "multi", dependsOn: "vest" },
       // Renders above literally everything (see RENDER_ORDER) — a
       // backpack sits over headwear too, not just the torso layers.
       { id: "vestRearAcc", label: "Backpack", type: "single" },
+      { id: "vestPatchesRear", label: "Patches (Rear)", type: "multi", dependsOn: "vest" },
     ],
   },
   {
@@ -205,6 +216,23 @@ const DEFAULT_ITEMS = {
       name: "M3MP6",
       src: "assets/vest/m3mp6_front.png",
       srcBack: "assets/vest/m3mp6_back.png",
+    },
+  ],
+  // Same patch art registered on both sides — a flat patch like this can
+  // reasonably go on either. Each has its own independent calibration
+  // since front and rear placement won't match.
+  vestPatchesFront: [
+    {
+      id: "vestpatch-front-ua",
+      name: "UA Flag",
+      src: "assets/Patches/ua_patch.png",
+    },
+  ],
+  vestPatchesRear: [
+    {
+      id: "vestpatch-rear-ua",
+      name: "UA Flag",
+      srcBack: "assets/Patches/ua_patch.png",
     },
   ],
   facewear: [
