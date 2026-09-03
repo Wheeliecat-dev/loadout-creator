@@ -148,7 +148,7 @@ const ITEM_TRANSFORMS = {
       "y": -14.724527008835722,
       "scale": 0.3399999999999994,
       "hue": 0,
-      "saturate": 0.7,
+      "saturate": 0.55,
       "brightness": 0.8,
       "shadow": 0.75
     },
@@ -160,6 +160,26 @@ const ITEM_TRANSFORMS = {
       "saturate": 0.6,
       "brightness": 1,
       "shadow": 0.6
+    }
+  },
+  "top-olive-fleece": {
+    "front": {
+      "x": 0.8547008547008557,
+      "y": -12.411017036907355,
+      "scale": 0.7999999999999998,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    },
+    "rear": {
+      "x": 0.8838383838383852,
+      "y": -13.243530094987637,
+      "scale": 0.7799999999999998,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
     }
   }
 };
