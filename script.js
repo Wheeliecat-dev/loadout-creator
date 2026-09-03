@@ -9,6 +9,7 @@
   const STORAGE_ITEMS = "loadoutCreator.items";
   const STORAGE_SELECTION = "loadoutCreator.selection";
   const STORAGE_ACTIVE_GROUP = "loadoutCreator.activeGroup";
+  const STORAGE_VIEW = "loadoutCreator.view";
 
   const SLOT_TYPE_BY_ID = {};
   GROUPS.forEach((group) => {
@@ -54,6 +55,7 @@
     items: loadItems(),
     selection: loadSelection(),
     activeGroup: localStorage.getItem(STORAGE_ACTIVE_GROUP) || GROUPS[0].id,
+    view: localStorage.getItem(STORAGE_VIEW) === "rear" ? "rear" : "front",
   };
 
   function persistItems() {
@@ -208,8 +210,10 @@
         grid.appendChild(tile);
       });
 
-      const addTile = addTileTemplate.content.firstElementChild.cloneNode(true);
-      const fileInput = addTile.querySelector("input[type=file]");
+      slotEl.appendChild(grid);
+
+      const addRow = addTileTemplate.content.firstElementChild.cloneNode(true);
+      const fileInput = addRow.querySelector("input[type=file]");
       fileInput.addEventListener("change", () => {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
@@ -219,9 +223,8 @@
         reader.readAsDataURL(file);
         fileInput.value = "";
       });
-      grid.appendChild(addTile);
+      slotEl.appendChild(addRow);
 
-      slotEl.appendChild(grid);
       slotsContainerEl.appendChild(slotEl);
     });
   }
@@ -237,10 +240,14 @@
       ids.forEach((itemId) => {
         const item = findItem(slotId, itemId);
         if (!item) return;
+
+        const src = state.view === "rear" ? item.srcBack : item.src;
+        if (!src) return; // no art for this view — skip rather than show the wrong side
+
         if (slotId === "base") hasBase = true;
         const img = document.createElement("img");
         img.className = "layer";
-        img.src = item.src;
+        img.src = src;
         img.alt = item.name;
         img.dataset.slot = slotId;
         stageEl.appendChild(img);
@@ -255,9 +262,22 @@
     }
   }
 
+  function setView(view) {
+    state.view = view;
+    localStorage.setItem(STORAGE_VIEW, view);
+    document.querySelectorAll(".view-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.view === view);
+    });
+    renderStage();
+  }
+
   document.getElementById("reset-btn").addEventListener("click", resetLoadout);
+  document.getElementById("view-toggle").addEventListener("click", (e) => {
+    const btn = e.target.closest(".view-btn");
+    if (btn) setView(btn.dataset.view);
+  });
 
   renderGroupNav();
   renderSlots();
-  renderStage();
+  setView(state.view);
 })();

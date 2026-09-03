@@ -18,6 +18,10 @@
 
   <main class="stage-panel">
     <div class="stage-wrap">
+      <div class="view-toggle" id="view-toggle">
+        <button class="view-btn active" data-view="front">Front</button>
+        <button class="view-btn" data-view="rear">Rear</button>
+      </div>
       <div id="stage" class="stage"></div>
     </div>
   </main>
@@ -36,10 +40,9 @@
 </template>
 
 <template id="add-tile-template">
-  <label class="item-tile add-tile">
+  <label class="add-item-btn">
     <input type="file" accept="image/*" hidden>
-    <div class="add-icon">+</div>
-    <div class="item-name">Add item</div>
+    <span class="add-icon">+</span> Add item
   </label>
 </template>
 

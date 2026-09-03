@@ -21,6 +21,15 @@ Add items in one of two ways:
    };
    ```
 
+   `srcBack` is optional on any item — add it if the item looks different
+   from behind (a backpack, a plate carrier's rear panel, etc.). Items
+   without a `srcBack` simply don't render while the stage is in Rear view.
+   The base body ships with both (`assets/base/front.png` /
+   `assets/base/rear.png`).
+
+The stage has a Front / Rear toggle above it that switches every layer to
+its back-view art (skipping layers that don't have one).
+
 ## Categories / slots
 
 Defined in `data/items.js`:

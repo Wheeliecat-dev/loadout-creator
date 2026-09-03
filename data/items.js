@@ -87,7 +87,21 @@ const GROUPS = [
   },
 ];
 
-// Optional permanent presets. Keyed by slot id -> array of { id, name, src }.
+// Optional permanent presets. Keyed by slot id -> array of items.
+// Each item is { id, name, src, srcBack }. `srcBack` is optional — only
+// needed if the item looks different from behind (e.g. a backpack, or a
+// plate carrier with a distinct rear panel). Items without a srcBack simply
+// don't render while viewing from the rear.
+//
 // Leave empty and add gear via the in-app uploader, or fill these in once
 // final art assets exist (e.g. src: "assets/top/plain_shirt.png").
-const DEFAULT_ITEMS = {};
+const DEFAULT_ITEMS = {
+  base: [
+    {
+      id: "base-default",
+      name: "Base Body",
+      src: "assets/base/front.png",
+      srcBack: "assets/base/rear.png",
+    },
+  ],
+};
