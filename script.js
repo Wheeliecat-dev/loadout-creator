@@ -138,9 +138,16 @@
     return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale});`;
   }
 
+  // Color/pattern variants share one item's calibration via `transformKey`
+  // instead of each carrying their own — see the note in data/items.js.
+  function transformKeyOf(itemId) {
+    const item = findItemAnywhere(itemId);
+    return (item && item.transformKey) || itemId;
+  }
+
   function updateLayerStyle(itemId) {
     const el = stageContentEl.querySelector(`.layer[data-item-id="${itemId}"]`);
-    if (el) el.style.cssText = layerStyle(itemId, state.view);
+    if (el) el.style.cssText = layerStyle(transformKeyOf(itemId), state.view);
   }
 
   // Every equipped layer, back-to-front, for the current view.
@@ -221,7 +228,7 @@
 
       items.forEach((item) => {
         const tile = itemTileTemplate.content.firstElementChild.cloneNode(true);
-        tile.querySelector("img").src = item.src;
+        tile.querySelector("img").src = item.src || item.srcBack; // rear-only items have no `src`
         tile.querySelector("img").alt = item.name;
         tile.querySelector(".item-name").textContent = item.name;
         if (isSelected(slot.id, item.id)) tile.classList.add("selected");
@@ -259,7 +266,7 @@
       img.alt = item.name;
       img.dataset.itemId = item.id;
       img.dataset.slot = slotId;
-      img.style.cssText = layerStyle(item.id, state.view);
+      img.style.cssText = layerStyle(item.transformKey || item.id, state.view);
       if (item.id === state.selectedItemId) img.classList.add("layer-selected");
       stageContentEl.appendChild(img);
     });
@@ -358,7 +365,7 @@
       adminScaleEl.value = "";
       return;
     }
-    const t = getTransform(item.id, state.view);
+    const t = getTransform(item.transformKey || item.id, state.view);
     adminItemNameEl.textContent = `${item.name} (${state.view})`;
     fields.forEach((el) => (el.disabled = false));
     adminXEl.value = t.x;
@@ -383,15 +390,16 @@
     e.preventDefault();
 
     const itemId = state.selectedItemId;
+    const key = transformKeyOf(itemId);
     const stageRect = stageEl.getBoundingClientRect();
-    const start = getTransform(itemId, state.view);
+    const start = getTransform(key, state.view);
     const startX = e.clientX;
     const startY = e.clientY;
 
     function onMove(ev) {
       const dxPct = ((ev.clientX - startX) / stageRect.width) * 100 / state.zoom;
       const dyPct = ((ev.clientY - startY) / stageRect.height) * 100 / state.zoom;
-      setTransform(itemId, state.view, { x: start.x + dxPct, y: start.y + dyPct });
+      setTransform(key, state.view, { x: start.x + dxPct, y: start.y + dyPct });
       updateLayerStyle(itemId);
       refreshAdminPanel();
     }
@@ -417,9 +425,10 @@
       e.preventDefault();
 
       const itemId = state.selectedItemId;
-      const current = getTransform(itemId, state.view);
+      const key = transformKeyOf(itemId);
+      const current = getTransform(key, state.view);
       const next = clamp(current.scale - Math.sign(e.deltaY) * 0.02, 0.05, 10);
-      setTransform(itemId, state.view, { scale: next });
+      setTransform(key, state.view, { scale: next });
       updateLayerStyle(itemId);
       refreshAdminPanel();
     },
@@ -430,7 +439,7 @@
     if (!state.selectedItemId) return;
     const num = parseFloat(value);
     if (Number.isNaN(num)) return;
-    setTransform(state.selectedItemId, state.view, { [field]: num });
+    setTransform(transformKeyOf(state.selectedItemId), state.view, { [field]: num });
     renderStage();
   }
 
@@ -440,7 +449,7 @@
 
   adminResetItemBtn.addEventListener("click", () => {
     if (!state.selectedItemId) return;
-    resetTransform(state.selectedItemId);
+    resetTransform(transformKeyOf(state.selectedItemId));
     renderStage();
     refreshAdminPanel();
   });

@@ -13,6 +13,7 @@ const RENDER_ORDER = [
   "top",
   "belt",
   "beltAccessories",
+  "beltRear",
   "vest",
   "vestAccessories",
   "facewear",
@@ -48,6 +49,7 @@ const GROUPS = [
     slots: [
       { id: "belt", label: "Belt", type: "single" },
       { id: "beltAccessories", label: "Pouches", type: "multi" },
+      { id: "beltRear", label: "Rear Accessory", type: "single" },
     ],
   },
   {
@@ -84,13 +86,24 @@ const GROUPS = [
 ];
 
 // Optional permanent presets. Keyed by slot id -> array of items.
-// Each item is { id, name, src, srcBack }. `srcBack` is optional — only
-// needed if the item looks different from behind (e.g. a backpack, or a
-// plate carrier with a distinct rear panel). Items without a srcBack simply
-// don't render while viewing from the rear.
+// Each item is { id, name, src, srcBack, transformKey }.
 //
-// Leave empty and add gear via the in-app uploader, or fill these in once
-// final art assets exist (e.g. src: "assets/top/plain_shirt.png").
+// - `srcBack` is optional — only needed if the item looks different from
+//   behind (e.g. a backpack, or a plate carrier's rear panel). Items
+//   without a srcBack simply don't render while viewing from the rear.
+// - A rear-only item (nothing hangs off the front) just omits `src` and
+//   sets `srcBack` — it then only shows up, and is only selectable, in
+//   Rear view.
+// - `transformKey` is optional. Admin-mode calibration (position/scale) is
+//   normally keyed by the item's own `id`. Set `transformKey` to another
+//   item's id to reuse *its* calibration instead — for color/pattern
+//   variants of the same physical object, which should always sit in
+//   exactly the same spot. Calibrate the first variant, then give every
+//   other variant `transformKey: "<that variant's id>"` and they inherit
+//   it automatically (recalibrating one recalibrates all of them).
+//
+// Fill these in once final art assets exist (e.g.
+// src: "assets/top/plain_shirt.png").
 const DEFAULT_ITEMS = {
   base: [
     {
@@ -128,6 +141,23 @@ const DEFAULT_ITEMS = {
       name: "MM14 RPS",
       src: "assets/Belt/mm14_rps_front.png",
       srcBack: "assets/Belt/mm14_rps_back.png",
+    },
+  ],
+  // Rear-only, single-select: only one can be attached at a time, and
+  // nothing here shows up in Front view. Folded/unfolded are different
+  // content (not just a recolor), so they're calibrated independently;
+  // a same-shape color variant of either one should reuse its
+  // transformKey — see note above DEFAULT_ITEMS.
+  beltRear: [
+    {
+      id: "beltrear-seatpad-folded",
+      name: "Seating Pad (Folded)",
+      srcBack: "assets/Belt/seating_pad_folded.png",
+    },
+    {
+      id: "beltrear-seatpad-unfolded",
+      name: "Seating Pad (Unfolded)",
+      srcBack: "assets/Belt/seating_pad_unfolded.png",
     },
   ],
   vest: [
