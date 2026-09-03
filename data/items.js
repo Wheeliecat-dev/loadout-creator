@@ -107,6 +107,20 @@ const DEFAULT_ITEMS = {
       src: "assets/Top/mm14_ubacs_front.png",
       srcBack: "assets/Top/mm14_ubacs_back.png",
     },
+    {
+      id: "top-mm14-jacket",
+      name: "MM14 Uniform Jacket",
+      src: "assets/Top/mm14_uniform_jacket_front.png",
+      srcBack: "assets/Top/mm14_uniform_jacket_back.png",
+    },
+  ],
+  bottom: [
+    {
+      id: "bottom-mm14-uniform",
+      name: "MM14 Uniform Pants",
+      src: "assets/Bottom/mm14_uniform_front.png",
+      srcBack: "assets/Bottom/mm14_uniform_back.png",
+    },
   ],
   vest: [
     {
