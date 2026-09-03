@@ -100,6 +100,14 @@ const DEFAULT_ITEMS = {
       srcBack: "assets/base/rear.png",
     },
   ],
+  top: [
+    {
+      id: "top-mm14-ubacs",
+      name: "MM14 UBACS",
+      src: "assets/Top/mm14_ubacs_front.png",
+      srcBack: "assets/Top/mm14_ubacs_back.png",
+    },
+  ],
   vest: [
     {
       id: "vest-m3mp6",
