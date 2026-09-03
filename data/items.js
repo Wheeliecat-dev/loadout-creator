@@ -140,6 +140,12 @@ const DEFAULT_ITEMS = {
       src: "assets/Top/mm14_uniform_jacket_front.png",
       srcBack: "assets/Top/mm14_uniform_jacket_back.png",
     },
+    {
+      id: "top-olive-fleece",
+      name: "Olive Fleece",
+      src: "assets/Top/olive_fleece_front.png",
+      srcBack: "assets/Top/olive_fleece_rear.png",
+    },
   ],
   bottom: [
     {
