@@ -17,7 +17,10 @@ const ITEM_TRANSFORMS = {
     "rear": {
       "x": 1.6666666666666665,
       "y": -21.14692708715765,
-      "scale": 0.3199999999999994
+      "scale": 0.3199999999999994,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1.25
     }
   },
   "base-default": {
@@ -80,7 +83,10 @@ const ITEM_TRANSFORMS = {
     "rear": {
       "x": 1.7361111111111112,
       "y": 3.524487847859608,
-      "scale": 0.27999999999999936
+      "scale": 0.27999999999999936,
+      "hue": 9,
+      "saturate": 0.7,
+      "brightness": 1.4
     }
   },
   "beltrear-seatpad-folded": {

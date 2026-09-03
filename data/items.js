@@ -190,4 +190,12 @@ const DEFAULT_ITEMS = {
       srcBack: "assets/vest/m3mp6_back.png",
     },
   ],
+  headwear: [
+    {
+      id: "headwear-kaska",
+      name: "KASKA",
+      src: "assets/Helmet/kaska_front.png",
+      srcBack: "assets/Helmet/kaska_rear.png",
+    },
+  ],
 };
