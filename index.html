@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loadout Creator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h1 class="app-title">Loadout Creator</h1>
+    <nav class="group-nav" id="group-nav"></nav>
+    <div class="sidebar-actions">
+      <button id="reset-btn" class="btn btn-secondary">Reset Loadout</button>
+    </div>
+  </aside>
+
+  <main class="stage-panel">
+    <div class="stage-wrap">
+      <div id="stage" class="stage"></div>
+    </div>
+  </main>
+
+  <section class="items-panel">
+    <div id="slots-container"></div>
+  </section>
+</div>
+
+<template id="item-tile-template">
+  <div class="item-tile" tabindex="0">
+    <button class="item-remove" title="Remove item" aria-label="Remove item">&times;</button>
+    <div class="item-thumb"><img alt=""></div>
+    <div class="item-name"></div>
+  </div>
+</template>
+
+<template id="add-tile-template">
+  <label class="item-tile add-tile">
+    <input type="file" accept="image/*" hidden>
+    <div class="add-icon">+</div>
+    <div class="item-name">Add item</div>
+  </label>
+</template>
+
+<script src="data/items.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
