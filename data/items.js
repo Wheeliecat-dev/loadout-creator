@@ -56,7 +56,7 @@ const GROUPS = [
   },
   {
     id: "vest",
-    label: "Armor > Vest",
+    label: "Vest",
     slots: [
       { id: "vest", label: "Plate Carrier / Chest Rig", type: "single" },
       { id: "vestAccessories", label: "MOLLE Pouches", type: "multi" },
@@ -102,6 +102,14 @@ const DEFAULT_ITEMS = {
       name: "Base Body",
       src: "assets/base/front.png",
       srcBack: "assets/base/rear.png",
+    },
+  ],
+  vest: [
+    {
+      id: "vest-m3mp6",
+      name: "M3MP6",
+      src: "assets/vest/m3mp6_front.png",
+      srcBack: "assets/vest/m3mp6_back.png",
     },
   ],
 };
