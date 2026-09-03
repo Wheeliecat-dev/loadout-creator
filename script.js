@@ -16,68 +16,6 @@
   const ZOOM_MAX = 3;
   const ZOOM_STEP = 0.1;
 
-  // ---------- Edge de-halo for cutout PNGs ----------
-  // Cutout/background-removal tools typically leave partially-transparent
-  // edge pixels whose RGB is still blended toward the original white
-  // background even as alpha fades to 0 — a pale halo, most visible when
-  // zoomed in or against the dark stage. This "un-blends" each such pixel
-  // by assuming a white matte and backing out what the true color must
-  // have been: true = (observed - 255*(1-alpha)) / alpha. Fully transparent
-  // and fully opaque pixels are untouched. Done once per image via an
-  // offscreen canvas, cached in memory for the session.
-  const cleanImageCache = new Map(); // src -> cleaned data URL
-
-  function clampByte(n) {
-    return n < 0 ? 0 : n > 255 ? 255 : n;
-  }
-
-  function cleanImage(src, onReady) {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      let imageData;
-      try {
-        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      } catch (e) {
-        onReady(src); // e.g. opened via file:// with canvas tainted — skip
-        return;
-      }
-      const d = imageData.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const a = d[i + 3];
-        if (a === 0 || a === 255) continue;
-        const af = a / 255;
-        d[i] = clampByte((d[i] - 255 * (1 - af)) / af);
-        d[i + 1] = clampByte((d[i + 1] - 255 * (1 - af)) / af);
-        d[i + 2] = clampByte((d[i + 2] - 255 * (1 - af)) / af);
-      }
-      ctx.putImageData(imageData, 0, 0);
-      const cleaned = canvas.toDataURL("image/png");
-      cleanImageCache.set(src, cleaned);
-      onReady(cleaned);
-    };
-    img.onerror = () => onReady(src);
-    img.src = src;
-  }
-
-  // Sets imgEl.src to the de-haloed version of `src`, computing it (async)
-  // only the first time — every later call for the same src is instant.
-  function applyCleanSrc(imgEl, src) {
-    const cached = cleanImageCache.get(src);
-    if (cached) {
-      imgEl.src = cached;
-      return;
-    }
-    imgEl.src = src; // show the original right away, swap once cleaned
-    cleanImage(src, (cleaned) => {
-      imgEl.src = cleaned;
-    });
-  }
-
   const SLOT_TYPE_BY_ID = {};
   const SLOT_DEF_BY_ID = {};
   GROUPS.forEach((group) => {
@@ -344,7 +282,7 @@
 
       items.forEach((item) => {
         const tile = itemTileTemplate.content.firstElementChild.cloneNode(true);
-        applyCleanSrc(tile.querySelector("img"), item.src || item.srcBack); // rear-only items have no `src`
+        tile.querySelector("img").src = item.src || item.srcBack; // rear-only items have no `src`
         tile.querySelector("img").alt = item.name;
         tile.querySelector(".item-name").textContent = item.name;
         if (isSelected(slot.id, item.id)) tile.classList.add("selected");
@@ -392,7 +330,7 @@
         .forEach(({ item, slotId }) => {
           const img = document.createElement("img");
           img.className = "layer layer-peek";
-          applyCleanSrc(img, item.srcBack);
+          img.src = item.srcBack;
           img.alt = item.name;
           img.dataset.itemId = item.id;
           img.dataset.slot = slotId;
@@ -407,7 +345,7 @@
 
       const img = document.createElement("img");
       img.className = "layer";
-      applyCleanSrc(img, src);
+      img.src = src;
       img.alt = item.name;
       img.dataset.itemId = item.id;
       img.dataset.slot = slotId;

@@ -126,20 +126,22 @@ const ITEM_TRANSFORMS = {
   },
   "headwear-kaska": {
     "front": {
-      "x": 1.226851851851852,
-      "y": -38.61272242210638,
-      "scale": 0.19999999999999937,
-      "hue": 0,
-      "saturate": 1,
-      "brightness": 1
-    },
-    "rear": {
-      "x": 0.8680555555555558,
-      "y": -39.0957077938501,
+      "x": 0.9873882503192851,
+      "y": -39.53097979242995,
       "scale": 0.17999999999999938,
       "hue": 0,
       "saturate": 1,
-      "brightness": 1
+      "brightness": 1,
+      "shadow": 0.8
+    },
+    "rear": {
+      "x": 0.6365740740740743,
+      "y": -39.14792242863321,
+      "scale": 0.19999999999999937,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 0.8,
+      "shadow": 0.35
     }
   },
   "vestrearacc-mm14-backpack": {
