@@ -10,6 +10,7 @@
   const STORAGE_ACTIVE_GROUP = "loadoutCreator.activeGroup";
   const STORAGE_VIEW = "loadoutCreator.view";
   const STORAGE_ZOOM = "loadoutCreator.zoom";
+  const STORAGE_PAN = "loadoutCreator.pan";
 
   const ZOOM_MIN = 0.5;
   const ZOOM_MAX = 3;
@@ -60,6 +61,7 @@
     activeGroup: localStorage.getItem(STORAGE_ACTIVE_GROUP) || (GROUPS[0] && GROUPS[0].id),
     view: localStorage.getItem(STORAGE_VIEW) === "rear" ? "rear" : "front",
     zoom: clamp(parseFloat(localStorage.getItem(STORAGE_ZOOM)) || 1, ZOOM_MIN, ZOOM_MAX),
+    pan: safeParse(localStorage.getItem(STORAGE_PAN)) || { x: 0, y: 0 },
     adminMode: false,
     selectedItemId: null,
   };
@@ -74,6 +76,10 @@
 
   function persistZoom() {
     localStorage.setItem(STORAGE_ZOOM, String(state.zoom));
+  }
+
+  function persistPan() {
+    localStorage.setItem(STORAGE_PAN, JSON.stringify(state.pan));
   }
 
   function findItem(slotId, itemId) {
@@ -333,21 +339,54 @@
     refreshAdminPanel();
   }
 
-  // ---------- Zoom (locked across every layer) ----------
+  // ---------- Zoom & pan (locked across every layer) ----------
+  // translate() is listed before scale() so the pan offset is in fixed
+  // screen pixels regardless of zoom level — dragging tracks the cursor
+  // 1:1 at any zoom instead of the pan distance scaling with it.
 
-  function applyZoom() {
-    stageContentEl.style.transform = `scale(${state.zoom})`;
+  function applyViewTransform() {
+    stageContentEl.style.transform = `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`;
     document.getElementById("zoom-level").textContent = `${Math.round(state.zoom * 100)}%`;
   }
 
   function setZoom(zoom) {
     state.zoom = clamp(zoom, ZOOM_MIN, ZOOM_MAX);
+    if (state.zoom <= 1) {
+      state.pan = { x: 0, y: 0 }; // nothing to pan to once fully zoomed out
+      persistPan();
+    }
     persistZoom();
-    applyZoom();
+    applyViewTransform();
   }
 
   document.getElementById("zoom-in").addEventListener("click", () => setZoom(state.zoom + ZOOM_STEP));
   document.getElementById("zoom-out").addEventListener("click", () => setZoom(state.zoom - ZOOM_STEP));
+
+  // Drag-to-pan for regular users (admin mode's own mousedown handler below
+  // takes over item-dragging instead).
+  stageEl.addEventListener("mousedown", (e) => {
+    if (state.adminMode) return;
+    e.preventDefault();
+
+    const startX = e.clientX - state.pan.x;
+    const startY = e.clientY - state.pan.y;
+    stageEl.classList.add("panning");
+
+    function onMove(ev) {
+      state.pan = { x: ev.clientX - startX, y: ev.clientY - startY };
+      applyViewTransform();
+    }
+
+    function onUp() {
+      stageEl.classList.remove("panning");
+      persistPan();
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  });
 
   // ---------- Admin Mode ----------
   // (the stage's wheel listener below handles both zoom-when-not-admin and
@@ -539,5 +578,5 @@
   renderGroupNav();
   renderSlots();
   setView(state.view);
-  applyZoom();
+  applyViewTransform();
 })();

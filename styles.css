@@ -199,6 +199,14 @@ body {
   transform-origin: 50% 50%;
 }
 
+.stage:not(.admin) {
+  cursor: grab;
+}
+
+.stage:not(.admin).panning {
+  cursor: grabbing;
+}
+
 .stage.admin {
   cursor: default;
 }
