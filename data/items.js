@@ -2,9 +2,7 @@
 //
 // This file defines the *framework*: which slots exist, how they're grouped
 // in the left-hand menu, and the order they're drawn on the soldier (back to
-// front). It ships with empty item lists — add real gear later either by
-// uploading through the app itself (stored per-browser) or by editing
-// DEFAULT_ITEMS below with permanent presets shipped with the site.
+// front). Add real gear by editing DEFAULT_ITEMS below.
 
 // Draw order, back (bottom of stack) to front (top of stack).
 const RENDER_ORDER = [
@@ -25,12 +23,10 @@ const RENDER_ORDER = [
 
 // Left-hand menu structure. Each group maps to one or more slots.
 // type: "single" = pick one item at a time. "multi" = toggle any number on.
+//
+// "base" is intentionally not a group here — the base body always renders
+// (the first entry in DEFAULT_ITEMS.base) and isn't user-selectable.
 const GROUPS = [
-  {
-    id: "base",
-    label: "Base",
-    slots: [{ id: "base", label: "Body", type: "single" }],
-  },
   {
     id: "top",
     label: "Top",

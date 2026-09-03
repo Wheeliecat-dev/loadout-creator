@@ -13,16 +13,51 @@
     <nav class="group-nav" id="group-nav"></nav>
     <div class="sidebar-actions">
       <button id="reset-btn" class="btn btn-secondary">Reset Loadout</button>
+      <button id="admin-toggle-btn" class="btn btn-secondary">Admin Mode</button>
     </div>
   </aside>
 
   <main class="stage-panel">
     <div class="stage-wrap">
-      <div class="view-toggle" id="view-toggle">
-        <button class="view-btn active" data-view="front">Front</button>
-        <button class="view-btn" data-view="rear">Rear</button>
+      <div class="stage-controls">
+        <div class="view-toggle" id="view-toggle">
+          <button class="view-btn active" data-view="front">Front</button>
+          <button class="view-btn" data-view="rear">Rear</button>
+        </div>
+        <div class="zoom-controls" id="zoom-controls">
+          <button class="zoom-btn" id="zoom-out" title="Zoom out">&minus;</button>
+          <span id="zoom-level">100%</span>
+          <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
+        </div>
       </div>
-      <div id="stage" class="stage"></div>
+      <div id="stage" class="stage">
+        <div id="stage-content" class="stage-content"></div>
+      </div>
+      <div id="admin-panel" class="admin-panel" hidden>
+        <p class="admin-hint">Pick a layer below, then drag on the stage to move it or scroll to scale it.</p>
+        <div id="admin-layer-list" class="admin-layer-list"></div>
+        <div class="admin-row">
+          <label>Item</label>
+          <span id="admin-item-name">&mdash;</span>
+        </div>
+        <div class="admin-row">
+          <label>X</label>
+          <input type="number" id="admin-x" step="0.5" disabled>
+        </div>
+        <div class="admin-row">
+          <label>Y</label>
+          <input type="number" id="admin-y" step="0.5" disabled>
+        </div>
+        <div class="admin-row">
+          <label>Scale</label>
+          <input type="number" id="admin-scale" step="0.01" disabled>
+        </div>
+        <div class="admin-row admin-buttons">
+          <button id="admin-reset-item-btn" class="btn btn-secondary" disabled>Reset item</button>
+          <button id="admin-save-btn" class="btn">Save site-wide</button>
+        </div>
+        <p id="admin-save-status" class="admin-status"></p>
+      </div>
     </div>
   </main>
 
@@ -39,6 +74,7 @@
 </template>
 
 <script src="data/items.js"></script>
+<script src="data/itemTransforms.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

@@ -74,6 +74,9 @@ body {
 .sidebar-actions {
   padding-top: 12px;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .btn {
@@ -89,6 +92,11 @@ body {
 
 .btn:hover { background: var(--border); }
 
+.btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
 /* ---------- Stage ---------- */
 
 .stage-panel {
@@ -101,14 +109,22 @@ body {
 
 .stage-wrap {
   width: 100%;
-  max-width: 480px;
+  max-width: 720px;
 }
 
-.view-toggle {
+.stage-controls {
   display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
+  align-items: center;
   justify-content: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.view-toggle,
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .view-btn {
@@ -129,8 +145,34 @@ body {
   color: var(--text);
 }
 
+.zoom-controls {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.zoom-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.zoom-btn:hover { background: var(--border); }
+
+#zoom-level {
+  min-width: 42px;
+  text-align: center;
+}
+
 .stage {
-  aspect-ratio: 3 / 4;
+  /* Matches the base body art's own canvas ratio (600x532) so the figure
+     fills the frame instead of floating in letterboxed empty space. */
+  aspect-ratio: 600 / 532;
   position: relative;
   width: 100%;
   height: 100%;
@@ -138,6 +180,12 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
+}
+
+.stage-content {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
 }
 
 .layer {
@@ -148,6 +196,20 @@ body {
   height: 100%;
   object-fit: contain;
   pointer-events: none;
+  transform-origin: 50% 50%;
+}
+
+.stage.admin {
+  cursor: default;
+}
+
+.stage.admin.has-selection {
+  cursor: move;
+}
+
+.layer-selected {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
 }
 
 .base-placeholder {
@@ -161,6 +223,93 @@ body {
   font-size: 14px;
   padding: 24px;
   line-height: 1.5;
+}
+
+/* ---------- Admin panel ---------- */
+
+.admin-panel {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.admin-hint {
+  margin: 0 0 10px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.admin-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.admin-layer-row {
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.admin-layer-row:hover:not(:disabled) { color: var(--text); }
+
+.admin-layer-row:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-layer-row.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--text);
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.admin-row label {
+  width: 48px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.admin-row input[type="number"] {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+}
+
+.admin-buttons {
+  gap: 8px;
+}
+
+.admin-buttons .btn {
+  width: auto;
+  flex: 1;
+}
+
+.admin-status {
+  margin: 6px 0 0;
+  color: var(--text-dim);
+  font-size: 12px;
 }
 
 /* ---------- Items panel ---------- */
