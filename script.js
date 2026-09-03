@@ -458,7 +458,8 @@
       })
       .catch(() => {
         adminSaveStatusEl.textContent =
-          "Couldn't save (run \"node server.js\" locally to enable saving).";
+          "Couldn't reach the save server. Double-click start.bat (or run \"node server.js\") " +
+          "in the project folder, then reload this page from http://localhost:5544 and try again.";
       });
   });
 

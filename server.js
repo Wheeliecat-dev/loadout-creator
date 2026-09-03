@@ -14,6 +14,7 @@ const path = require("path");
 
 const ROOT = __dirname;
 const TRANSFORMS_PATH = path.join(ROOT, "data", "itemTransforms.js");
+const TRANSFORMS_BACKUP_PATH = path.join(ROOT, "data", "itemTransforms.backup.js");
 const PORT = process.env.PORT || 5544;
 
 const MIME = {
@@ -76,13 +77,24 @@ function handleSaveTransforms(req, res) {
       "// edits are fine too, but let the tool do it when you can.\n" +
       `const ITEM_TRANSFORMS = ${JSON.stringify(data, null, 2)};\n`;
 
-    fs.writeFile(TRANSFORMS_PATH, contents, "utf8", (err) => {
-      if (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ error: "Write failed" }));
-      }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true }));
+    // Keep one level of undo: whatever was on disk before this write goes to
+    // itemTransforms.backup.js, so a bad save (empty payload, wrong browser
+    // tab, whatever) is never a permanent loss.
+    fs.readFile(TRANSFORMS_PATH, "utf8", (readErr, previous) => {
+      const backupStep = readErr
+        ? Promise.resolve()
+        : new Promise((resolve) => fs.writeFile(TRANSFORMS_BACKUP_PATH, previous, "utf8", () => resolve()));
+
+      backupStep.then(() => {
+        fs.writeFile(TRANSFORMS_PATH, contents, "utf8", (err) => {
+          if (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: "Write failed" }));
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: true }));
+        });
+      });
     });
   });
 }
