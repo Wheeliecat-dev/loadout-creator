@@ -222,9 +222,13 @@
     const py = row.py;
     const x = parentT.x + (px - 50) * parentT.scale;
     const y = parentT.y + (py - 50) * parentT.scale;
-    const scale = t.scale * parentT.scale;
+    // Scale is absolute — same units as every other item's, set once via
+    // Admin Mode and rendered exactly as typed. Only x/y are parented to
+    // the vest's current position; if the vest is later rescaled a lot,
+    // pouch sizes may need re-tuning too, same as they would have without
+    // MOLLE attachment at all.
     const filter = `${shadowFilter(t.shadow)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
-    return `transform: translate(${x}%, ${y}%) scale(${scale}); filter: ${filter};`;
+    return `transform: translate(${x}%, ${y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
   // A row's usable slide range is only approximate ground truth — pouches

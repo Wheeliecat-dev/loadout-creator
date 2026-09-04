@@ -45,9 +45,12 @@ const RENDER_ORDER = [
 // to "vest". Equipping an item there opens a row-picker (from the parent
 // item's `molleRows[view]`) plus a slide control instead of toggling
 // straight on; position is computed live from the row + slide + the
-// parent's own current position/scale, so it moves and resizes correctly
-// if the parent is ever recalibrated. Pair it with `dependsOn` pointing at
-// the same slot, same as any other attachment.
+// parent's own current position/scale, so it moves correctly if the
+// parent is ever repositioned. The attached item's own `scale` is a plain
+// absolute value, same as any other item's — set once via Admin Mode and
+// rendered exactly as typed, independent of the parent's scale. Pair
+// `attachTo` with `dependsOn` pointing at the same slot, same as any other
+// attachment.
 const GROUPS = [
   {
     id: "top",
@@ -315,11 +318,11 @@ const DEFAULT_ITEMS = {
     },
   ],
   // MOLLE-attached (see vestAccessories' `attachTo` above): equipping one
-  // opens the row/slide picker instead of toggling it straight on. Its own
-  // `scale` (set via Admin Mode as usual) is relative to the *vest's*
-  // scale, not the stage — so it resizes correctly if the vest ever gets
-  // recalibrated. No molleRows entry needed on the pouch itself; it reads
-  // whichever vest is currently worn.
+  // opens the row/slide picker instead of toggling it straight on. Only
+  // its position is parented to the vest (moves with it); `scale` (set via
+  // Admin Mode as usual) is an absolute value same as any other item's, so
+  // it renders exactly as typed. No molleRows entry needed on the pouch
+  // itself; it reads whichever vest is currently worn.
   vestAccessories: [
     {
       id: "vestacc-double-ak-mag",
