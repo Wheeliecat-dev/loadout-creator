@@ -2,11 +2,11 @@
 //
 // Gear art doesn't all share the base body's canvas size/framing, so each
 // item can be nudged/scaled to line up. Keyed by item id -> per-view
-// { x, y, scale, hue, saturate, brightness, shadow } (x/y are percent
-// offsets, scale/saturate/brightness are multipliers, hue is degrees,
-// shadow is the drop-shadow's opacity 0-1; defaults are
-// { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1, shadow: 0.35 }
-// for any field an entry omits).
+// { x, y, scale, hue, saturate, brightness, shadow, spread } (x/y are
+// percent offsets, scale/saturate/brightness are multipliers, hue is
+// degrees, shadow is the drop-shadow's opacity 0-1, spread is its blur
+// radius in px; defaults are { x: 0, y: 0, scale: 1, hue: 0, saturate: 1,
+// brightness: 1, shadow: 0.35, spread: 5 } for any field an entry omits).
 //
 // Written by Admin Mode's "Save site-wide" button (via server.js) — hand
 // edits are fine too, but let the tool do it when you can.
@@ -325,8 +325,9 @@ const ITEM_TRANSFORMS = {
       "scale": 0.1399999999999994,
       "hue": 0,
       "saturate": 1,
-      "brightness": 1,
-      "shadow": 0.35
+      "brightness": 0.8,
+      "shadow": 1,
+      "spread": 20
     }
   }
 };

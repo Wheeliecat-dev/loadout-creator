@@ -157,14 +157,16 @@
 
   // ---------- Transform helpers (admin calibration) ----------
 
-  const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1, shadow: 0.35 };
+  const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 1, hue: 0, saturate: 1, brightness: 1, shadow: 0.35, spread: 5 };
 
-  // `shadow` is the drop-shadow's opacity (0 = none), admin-tunable per
-  // item. Blur/offset stay fixed — only intensity is exposed. Filter order
-  // matters: drop-shadow first so it isn't itself hue/brightness-shifted by
-  // the grading that follows it.
-  function shadowFilter(intensity) {
-    return `drop-shadow(0 3px 5px rgba(0,0,0,${intensity}))`;
+  // `shadow` is the drop-shadow's opacity (0 = none), `spread` is its blur
+  // radius in px (drop-shadow has no separate spread-radius like
+  // box-shadow does, so blur is the closest "how far it diffuses" knob) —
+  // both admin-tunable per item. Offset stays fixed. Filter order matters:
+  // drop-shadow first so it isn't itself hue/brightness-shifted by the
+  // grading that follows it.
+  function shadowFilter(intensity, spread) {
+    return `drop-shadow(0 3px ${spread}px rgba(0,0,0,${intensity}))`;
   }
 
   function getTransform(itemId, view) {
@@ -188,7 +190,7 @@
   // Admin Mode, and needs no server-side processing.
   function layerStyle(itemId, view) {
     const t = getTransform(itemId, view);
-    const filter = `${shadowFilter(t.shadow)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
+    const filter = `${shadowFilter(t.shadow, t.spread)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
     return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
@@ -210,7 +212,17 @@
   // current position/scale. Its own `scale` is treated as relative to the
   // parent's scale (not the stage), so it resizes correctly if the parent
   // is ever recalibrated — true parenting, not just a one-time copy.
-  function molleLayerStyle(item, view, parentItem, rowId, slide) {
+  // A pouch snapped dead-center on its row every time reads as too
+  // perfect/CG. This is a small fixed-at-placement jitter (rolled once in
+  // startPlacement, not re-rolled on every render) rather than true
+  // randomness, so it looks hand-placed instead of glitching around.
+  const ROW_JITTER_RANGE = 0.8; // vest image-local %, roughly "a couple pixels"
+
+  function rollRowJitter() {
+    return (Math.random() - 0.5) * ROW_JITTER_RANGE;
+  }
+
+  function molleLayerStyle(item, view, parentItem, rowId, slide, jitter) {
     const rows = getMolleRows(parentItem, view);
     const row = rows.find((r) => r.id === rowId) || rows[0];
     if (!row) return "display: none;"; // no row geometry for this view
@@ -219,7 +231,7 @@
     const t = getTransform(item.transformKey || item.id, view);
     const slideClamped = clamp(slide || 0, -row.halfWidth, row.halfWidth);
     const px = row.px + slideClamped;
-    const py = row.py;
+    const py = row.py + (jitter || 0);
     const x = parentT.x + (px - 50) * parentT.scale;
     const y = parentT.y + (py - 50) * parentT.scale;
     // Scale is absolute — same units as every other item's, set once via
@@ -227,7 +239,7 @@
     // the vest's current position; if the vest is later rescaled a lot,
     // pouch sizes may need re-tuning too, same as they would have without
     // MOLLE attachment at all.
-    const filter = `${shadowFilter(t.shadow)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
+    const filter = `${shadowFilter(t.shadow, t.spread)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
     return `transform: translate(${x}%, ${y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
@@ -252,7 +264,9 @@
     const slot = SLOT_DEF_BY_ID[slotId];
     const parentItem = getAttachParent(slot);
     const rows = getMolleRows(parentItem, state.view);
-    state.placing = { slotId, itemId, row: rows.length ? rows[0].id : null, slide: 0 };
+    // Rolled once up front so the preview already shows the final look —
+    // no jump between preview and confirmed result.
+    state.placing = { slotId, itemId, row: rows.length ? rows[0].id : null, slide: 0, jitter: rollRowJitter() };
     renderSlots();
     renderStage();
   }
@@ -270,9 +284,9 @@
   // unique placement.
   function confirmPlacement() {
     if (!state.placing || !isPlacementValid()) return;
-    const { slotId, itemId, row, slide } = state.placing;
+    const { slotId, itemId, row, slide, jitter } = state.placing;
     const instanceId = `${itemId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    state.selection[slotId] = [...(state.selection[slotId] || []), { instanceId, itemId, row, slide }];
+    state.selection[slotId] = [...(state.selection[slotId] || []), { instanceId, itemId, row, slide, jitter }];
     state.placing = null;
     persistSelection();
     renderSlots();
@@ -343,7 +357,7 @@
         const slotDef = SLOT_DEF_BY_ID[slotId];
         const molle =
           slotDef && slotDef.attachTo && typeof entry === "object"
-            ? { row: entry.row, slide: entry.slide, parentItem: getAttachParent(slotDef) }
+            ? { row: entry.row, slide: entry.slide, jitter: entry.jitter, parentItem: getAttachParent(slotDef) }
             : null;
         layers.push({ item, slotId, molle });
         // Companions ride along with their parent — always equipped when
@@ -591,7 +605,7 @@
 
   function peekLayerStyle(key) {
     const t = getTransform(key, "rear"); // only a rear calibration exists for these
-    const filter = `${shadowFilter(t.shadow)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness * PEEK_DARKEN})`;
+    const filter = `${shadowFilter(t.shadow, t.spread)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness * PEEK_DARKEN})`;
     return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
@@ -633,7 +647,7 @@
       img.dataset.slot = slotId;
       img.style.cssText =
         molle && molle.parentItem
-          ? molleLayerStyle(item, state.view, molle.parentItem, molle.row, molle.slide)
+          ? molleLayerStyle(item, state.view, molle.parentItem, molle.row, molle.slide, molle.jitter)
           : layerStyle(item.transformKey || item.id, state.view);
       if (item.id === state.selectedItemId) img.classList.add("layer-selected");
       stageContentEl.appendChild(img);
@@ -651,7 +665,14 @@
         img.className = "layer layer-preview";
         img.src = src;
         img.alt = item.name;
-        img.style.cssText = molleLayerStyle(item, state.view, parentItem, state.placing.row, state.placing.slide);
+        img.style.cssText = molleLayerStyle(
+          item,
+          state.view,
+          parentItem,
+          state.placing.row,
+          state.placing.slide,
+          state.placing.jitter
+        );
         stageContentEl.appendChild(img);
       }
     }
@@ -741,6 +762,8 @@
   const adminBrightnessEl = document.getElementById("admin-brightness");
   const adminShadowEl = document.getElementById("admin-shadow");
   const adminShadowValueEl = document.getElementById("admin-shadow-value");
+  const adminSpreadEl = document.getElementById("admin-spread");
+  const adminSpreadValueEl = document.getElementById("admin-spread-value");
   const adminResetItemBtn = document.getElementById("admin-reset-item-btn");
   const adminSaveBtn = document.getElementById("admin-save-btn");
   const adminSaveStatusEl = document.getElementById("admin-save-status");
@@ -793,6 +816,7 @@
       adminSaturateEl,
       adminBrightnessEl,
       adminShadowEl,
+      adminSpreadEl,
       adminResetItemBtn,
     ];
     if (!item) {
@@ -800,6 +824,7 @@
       fields.forEach((el) => (el.disabled = true));
       fields.forEach((el) => el !== adminResetItemBtn && (el.value = ""));
       adminShadowValueEl.textContent = "";
+      adminSpreadValueEl.textContent = "";
       return;
     }
     const t = getTransform(item.transformKey || item.id, state.view);
@@ -816,6 +841,8 @@
     adminBrightnessEl.value = t.brightness;
     adminShadowEl.value = t.shadow;
     adminShadowValueEl.textContent = t.shadow.toFixed(2);
+    adminSpreadEl.value = t.spread;
+    adminSpreadValueEl.textContent = `${t.spread}px`;
   }
 
   function findItemAnywhere(itemId) {
@@ -913,6 +940,10 @@
   adminShadowEl.addEventListener("input", () => {
     applyNumericEdit("shadow", adminShadowEl.value);
     adminShadowValueEl.textContent = parseFloat(adminShadowEl.value).toFixed(2);
+  });
+  adminSpreadEl.addEventListener("input", () => {
+    applyNumericEdit("spread", adminSpreadEl.value);
+    adminSpreadValueEl.textContent = `${adminSpreadEl.value}px`;
   });
 
   adminResetItemBtn.addEventListener("click", () => {
