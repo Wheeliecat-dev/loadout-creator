@@ -264,5 +264,11 @@ const DEFAULT_ITEMS = {
       src: "assets/Helmet/kaska_front.png",
       srcBack: "assets/Helmet/kaska_rear.png",
     },
+    {
+      id: "headwear-fast",
+      name: "FAST",
+      src: "assets/Helmet/fast_front.png",
+      srcBack: "assets/Helmet/fast_back.png",
+    },
   ],
 };
