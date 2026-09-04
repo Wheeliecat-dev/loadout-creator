@@ -246,5 +246,36 @@ const ITEM_TRANSFORMS = {
       "brightness": 1,
       "shadow": 0.35
     }
+  },
+  "headwear-fast": {
+    "front": {
+      "x": 0.9259259259259254,
+      "y": -40.98848830473766,
+      "scale": 0.17999999999999938,
+      "hue": 0,
+      "saturate": 0.6,
+      "brightness": 1,
+      "shadow": 0.35
+    },
+    "rear": {
+      "x": 1.157407407407407,
+      "y": -42.3460688090984,
+      "scale": 0.1399999999999994,
+      "hue": 0,
+      "saturate": 0.7,
+      "brightness": 1,
+      "shadow": 0.35
+    }
+  },
+  "top-mm14-winter-jacket": {
+    "front": {
+      "x": 1.003086419753087,
+      "y": -14.44604895665914,
+      "scale": 0.5199999999999996,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    }
   }
 };

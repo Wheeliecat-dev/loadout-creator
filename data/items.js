@@ -160,6 +160,12 @@ const DEFAULT_ITEMS = {
       src: "assets/Top/olive_fleece_front.png",
       srcBack: "assets/Top/olive_fleece_rear.png",
     },
+    {
+      id: "top-mm14-winter-jacket",
+      name: "MM14 Winter Jacket",
+      src: "assets/Top/mm14_winter_jacket_front.png",
+      srcBack: "assets/Top/mm14_winter_jacket_back.png",
+    },
   ],
   bottom: [
     {
