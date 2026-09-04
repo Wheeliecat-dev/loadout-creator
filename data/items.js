@@ -39,6 +39,15 @@ const RENDER_ORDER = [
 //
 // "base" is intentionally not a group here — the base body always renders
 // (the first entry in DEFAULT_ITEMS.base) and isn't user-selectable.
+//
+// `attachTo` marks a multi-select slot as MOLLE-attached to whatever's
+// equipped in another (single-select) slot — e.g. vestAccessories attaches
+// to "vest". Equipping an item there opens a row-picker (from the parent
+// item's `molleRows[view]`) plus a slide control instead of toggling
+// straight on; position is computed live from the row + slide + the
+// parent's own current position/scale, so it moves and resizes correctly
+// if the parent is ever recalibrated. Pair it with `dependsOn` pointing at
+// the same slot, same as any other attachment.
 const GROUPS = [
   {
     id: "top",
@@ -71,7 +80,11 @@ const GROUPS = [
     label: "Vest",
     slots: [
       { id: "vest", label: "Plate Carrier / Chest Rig", type: "single" },
-      { id: "vestAccessories", label: "MOLLE Pouches", type: "multi" },
+      // `attachTo` makes this a MOLLE slot: instead of a plain toggle, an
+      // item picks a row (snapped) and slides left/right along it, keyed
+      // to whatever's equipped in the "vest" slot — see the note above
+      // DEFAULT_ITEMS and `molleRows` on vest-m3mp6 below.
+      { id: "vestAccessories", label: "MOLLE Pouches", type: "multi", dependsOn: "vest", attachTo: "vest" },
       // Patches attach to the vest, so both need one worn — see
       // `dependsOn`. Listed either side of Backpack to mirror the
       // render order: front patches draw under the pack, rear ones over it.
@@ -153,6 +166,16 @@ const GROUPS = [
 //   `zSlot: "headwearAccessories"` so it draws over the helmet — one flat
 //   image can't occupy two stack positions, so the hood had to become a
 //   second layer to get both right at once.
+// - `molleRows` is optional, set on a *parent* item (e.g. a vest), not on
+//   the attachment itself: { front: [...], rear: [...] }, each an array of
+//   { id, px, py, halfWidth } describing one MOLLE row on that item's own
+//   image (px/py = row center, halfWidth = how far a pouch can slide
+//   either side of center — all 0-100, top-left origin, independent of
+//   the item's on-stage calibration). Measure it once by painting each
+//   row solid red on a copy of the art and pixel-scanning it. Items in a
+//   slot with `attachTo` pointing at this one will read these to build
+//   their row picker; an item with no rows for the current view simply
+//   can't be attached while viewing it.
 //
 // Fill these in once final art assets exist (e.g.
 // src: "assets/top/plain_shirt.png").
@@ -258,12 +281,50 @@ const DEFAULT_ITEMS = {
       name: "M3MP6",
       src: "assets/vest/m3mp6_front.png",
       srcBack: "assets/vest/m3mp6_back.png",
+      // MOLLE row geometry, measured directly off m3mp6_front_molle.png /
+      // m3mp6_back_molle.png (each row painted solid red, one pixel-scan
+      // per row): px/py are the row's center in this item's own image,
+      // 0-100 top-left origin; halfWidth is how far a pouch can slide
+      // either side of center before running off the row, same units.
+      molleRows: {
+        front: [
+          { id: "row1", px: 52.56, py: 36.64, halfWidth: 20.47 },
+          { id: "row2", px: 52.09, py: 43.19, halfWidth: 20.23 },
+          { id: "row3", px: 51.98, py: 50.17, halfWidth: 20.12 },
+          { id: "row4", px: 52.09, py: 56.47, halfWidth: 20.47 },
+          { id: "row5", px: 50.47, py: 76.21, halfWidth: 17.44 },
+          { id: "row6", px: 50.12, py: 82.41, halfWidth: 16.86 },
+          { id: "row7", px: 50.0, py: 88.19, halfWidth: 16.28 },
+        ],
+        rear: [
+          { id: "row1", px: 47.09, py: 39.48, halfWidth: 19.65 },
+          { id: "row2", px: 46.74, py: 48.71, halfWidth: 19.3 },
+          { id: "row3", px: 46.86, py: 57.41, halfWidth: 19.42 },
+          { id: "row4", px: 48.26, py: 67.59, halfWidth: 28.72 },
+          { id: "row5", px: 48.49, py: 76.47, halfWidth: 28.95 },
+          { id: "row6", px: 47.91, py: 85.69, halfWidth: 28.37 },
+          { id: "row7", px: 48.95, py: 93.36, halfWidth: 28.02 },
+        ],
+      },
     },
     {
       id: "vest-mtac-qrs",
       name: "M-TAC QRS",
       src: "assets/vest/mtac_qrs_front.png",
       srcBack: "assets/vest/mtac_qrs_back.png",
+    },
+  ],
+  // MOLLE-attached (see vestAccessories' `attachTo` above): equipping one
+  // opens the row/slide picker instead of toggling it straight on. Its own
+  // `scale` (set via Admin Mode as usual) is relative to the *vest's*
+  // scale, not the stage — so it resizes correctly if the vest ever gets
+  // recalibrated. No molleRows entry needed on the pouch itself; it reads
+  // whichever vest is currently worn.
+  vestAccessories: [
+    {
+      id: "vestacc-double-ak-mag",
+      name: "Double AK Mag Pouch",
+      src: "assets/VestFrontAcc/double_ak_mag_pouch.png",
     },
   ],
   // Same patch art registered on both sides — a flat patch like this can

@@ -317,5 +317,16 @@ const ITEM_TRANSFORMS = {
       "brightness": 1,
       "shadow": 0.85
     }
+  },
+  "vestacc-double-ak-mag": {
+    "front": {
+      "x": -2.1527777777777786,
+      "y": -15.6643904349316,
+      "scale": 0.1399999999999994,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
+    }
   }
 };

@@ -220,6 +220,10 @@ body {
   outline-offset: -2px;
 }
 
+.layer-preview {
+  opacity: 0.65;
+}
+
 .base-placeholder {
   position: absolute;
   inset: 0;
@@ -391,6 +395,11 @@ body {
   background: var(--accent-dim);
 }
 
+.item-tile.placing {
+  border-color: var(--accent);
+  border-style: dashed;
+}
+
 .item-thumb {
   width: 100%;
   aspect-ratio: 1;
@@ -421,6 +430,119 @@ body {
   font-size: 12px;
   color: var(--text-dim);
   margin: 0;
+}
+
+/* ---------- MOLLE attachment ---------- */
+
+.molle-instance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.molle-instance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.molle-instance-remove {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--danger);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.molle-placement {
+  background: var(--panel-alt);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.molle-placement-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.molle-row-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.molle-row-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.molle-row-btn:hover { color: var(--text); }
+
+.molle-row-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--text);
+}
+
+.molle-slide-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.molle-slide-row label {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.molle-slide-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.molle-validity {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.molle-validity-bad {
+  color: var(--danger);
+}
+
+.molle-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.molle-actions .btn {
+  width: auto;
+  flex: 1;
 }
 
 @media (max-width: 900px) {

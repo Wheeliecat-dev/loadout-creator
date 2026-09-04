@@ -74,6 +74,9 @@
     pan: safeParse(localStorage.getItem(STORAGE_PAN)) || { x: 0, y: 0 },
     adminMode: false,
     selectedItemId: null,
+    // In-progress MOLLE placement: { slotId, itemId, row, slide } | null.
+    // Nothing is added to `selection` until confirmed.
+    placing: null,
   };
 
   function persistSelection() {
@@ -96,10 +99,16 @@
     return (state.items[slotId] || []).find((i) => i.id === itemId) || null;
   }
 
+  // Multi-select entries are plain item-id strings, except MOLLE-attached
+  // slots (see `attachTo`), where each entry is { itemId, row, slide }.
+  function entryItemId(entry) {
+    return typeof entry === "string" ? entry : entry.itemId;
+  }
+
   function isSelected(slotId, itemId) {
     const type = SLOT_TYPE_BY_ID[slotId];
     if (type === "multi") {
-      return (state.selection[slotId] || []).includes(itemId);
+      return (state.selection[slotId] || []).some((e) => entryItemId(e) === itemId);
     }
     return state.selection[slotId] === itemId;
   }
@@ -139,6 +148,7 @@
       state.selection[slotId] = SLOT_TYPE_BY_ID[slotId] === "multi" ? [] : null;
     });
     state.selectedItemId = null;
+    state.placing = null;
     persistSelection();
     renderStage();
     renderSlots();
@@ -182,6 +192,117 @@
     return `transform: translate(${t.x}%, ${t.y}%) scale(${t.scale}); filter: ${filter};`;
   }
 
+  // ---------- MOLLE attachment (row-snap, slide, parented to the host) ----------
+
+  function getAttachParent(slot) {
+    if (!slot || !slot.attachTo) return null;
+    const parentId = state.selection[slot.attachTo];
+    if (!parentId) return null;
+    return findItem(slot.attachTo, parentId);
+  }
+
+  function getMolleRows(parentItem, view) {
+    return (parentItem && parentItem.molleRows && parentItem.molleRows[view]) || [];
+  }
+
+  // A MOLLE item's own x/y are never used — its position comes from the
+  // row it's snapped to plus its slide, resolved against the *parent's*
+  // current position/scale. Its own `scale` is treated as relative to the
+  // parent's scale (not the stage), so it resizes correctly if the parent
+  // is ever recalibrated — true parenting, not just a one-time copy.
+  function molleLayerStyle(item, view, parentItem, rowId, slide) {
+    const rows = getMolleRows(parentItem, view);
+    const row = rows.find((r) => r.id === rowId) || rows[0];
+    if (!row) return "display: none;"; // no row geometry for this view
+
+    const parentT = getTransform(parentItem.transformKey || parentItem.id, view);
+    const t = getTransform(item.transformKey || item.id, view);
+    const slideClamped = clamp(slide || 0, -row.halfWidth, row.halfWidth);
+    const px = row.px + slideClamped;
+    const py = row.py;
+    const x = parentT.x + (px - 50) * parentT.scale;
+    const y = parentT.y + (py - 50) * parentT.scale;
+    const scale = t.scale * parentT.scale;
+    const filter = `${shadowFilter(t.shadow)} hue-rotate(${t.hue}deg) saturate(${t.saturate}) brightness(${t.brightness})`;
+    return `transform: translate(${x}%, ${y}%) scale(${scale}); filter: ${filter};`;
+  }
+
+  // A row's usable slide range is only approximate ground truth — pouches
+  // vary in width and we don't track their exact footprint — so "valid"
+  // just means "not suspiciously close to another pouch already on this
+  // row," using a fraction of the row's own width as the minimum gap.
+  const MIN_SLIDE_GAP_FRACTION = 0.3;
+
+  function isPlacementValid() {
+    if (!state.placing || !state.placing.row) return false;
+    const { slotId, row, slide } = state.placing;
+    const parentItem = getAttachParent(SLOT_DEF_BY_ID[slotId]);
+    const rowDef = getMolleRows(parentItem, state.view).find((r) => r.id === row);
+    if (!rowDef) return false;
+    const minGap = rowDef.halfWidth * MIN_SLIDE_GAP_FRACTION;
+    const others = state.selection[slotId] || [];
+    return !others.some((e) => e.row === row && Math.abs(e.slide - slide) < minGap);
+  }
+
+  function startPlacement(slotId, itemId) {
+    const slot = SLOT_DEF_BY_ID[slotId];
+    const parentItem = getAttachParent(slot);
+    const rows = getMolleRows(parentItem, state.view);
+    state.placing = { slotId, itemId, row: rows.length ? rows[0].id : null, slide: 0 };
+    renderSlots();
+    renderStage();
+  }
+
+  function setPlacingRow(rowId) {
+    if (!state.placing) return;
+    state.placing = { ...state.placing, row: rowId, slide: 0 };
+    renderSlots();
+    renderStage();
+  }
+
+  // Multiple instances of the same pouch are allowed (see below), so
+  // confirming always adds a new entry rather than toggling one — each
+  // gets its own instanceId since `itemId` alone no longer identifies a
+  // unique placement.
+  function confirmPlacement() {
+    if (!state.placing || !isPlacementValid()) return;
+    const { slotId, itemId, row, slide } = state.placing;
+    const instanceId = `${itemId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    state.selection[slotId] = [...(state.selection[slotId] || []), { instanceId, itemId, row, slide }];
+    state.placing = null;
+    persistSelection();
+    renderSlots();
+    renderStage();
+    refreshAdminPanel();
+  }
+
+  function cancelPlacement() {
+    state.placing = null;
+    renderSlots();
+    renderStage();
+  }
+
+  function removeMolleInstance(slotId, instanceId) {
+    state.selection[slotId] = (state.selection[slotId] || []).filter((e) => e.instanceId !== instanceId);
+    persistSelection();
+    renderSlots();
+    renderStage();
+    refreshAdminPanel();
+  }
+
+  // Molle items are handled entirely separately from the plain toggle
+  // flow: clicking a tile always starts placing *another* instance —
+  // removal happens only via the equipped-instances list (see
+  // renderSlots), since with duplicates allowed, "click to remove" on the
+  // shared tile would be ambiguous about which instance to drop.
+  function handleTileActivate(slot, itemId) {
+    if (slot.attachTo) {
+      startPlacement(slot.id, itemId);
+      return;
+    }
+    toggleSelect(slot.id, itemId);
+  }
+
   // Color/pattern variants share one item's calibration via `transformKey`
   // instead of each carrying their own — see the note in data/items.js.
   function transformKeyOf(itemId) {
@@ -189,6 +310,10 @@
     return (item && item.transformKey) || itemId;
   }
 
+  // Only for non-MOLLE items: a MOLLE pouch can have several instances at
+  // once (different rows/slides), so a single shared style string can't be
+  // patched onto all of them — those go through a full renderStage()
+  // instead, which recomputes each instance from its own placement.
   function updateLayerStyle(itemId) {
     const el = stageContentEl.querySelector(`.layer[data-item-id="${itemId}"]`);
     if (el) el.style.cssText = layerStyle(transformKeyOf(itemId), state.view);
@@ -206,10 +331,17 @@
         const type = SLOT_TYPE_BY_ID[slotId];
         ids = type === "multi" ? state.selection[slotId] || [] : [state.selection[slotId]].filter(Boolean);
       }
-      ids.forEach((itemId) => {
+      ids.forEach((entry) => {
+        const itemId = entryItemId(entry);
         const item = slotId === "base" ? baseItem : findItem(slotId, itemId);
         if (!item) return;
-        layers.push({ item, slotId });
+
+        const slotDef = SLOT_DEF_BY_ID[slotId];
+        const molle =
+          slotDef && slotDef.attachTo && typeof entry === "object"
+            ? { row: entry.row, slide: entry.slide, parentItem: getAttachParent(slotDef) }
+            : null;
+        layers.push({ item, slotId, molle });
         // Companions ride along with their parent — always equipped when
         // it is, never separately pickable — e.g. a jacket's hood, drawn
         // over the helmet via its own zSlot while the jacket itself stays
@@ -283,6 +415,13 @@
         return;
       }
 
+      if (slot.attachTo) {
+        slotEl.appendChild(buildEquippedInstancesList(slot));
+        if (state.placing && state.placing.slotId === slot.id) {
+          slotEl.appendChild(buildPlacementPanel(slot));
+        }
+      }
+
       const grid = document.createElement("div");
       grid.className = "item-grid";
 
@@ -303,12 +442,15 @@
         tile.querySelector("img").alt = item.name;
         tile.querySelector(".item-name").textContent = item.name;
         if (isSelected(slot.id, item.id)) tile.classList.add("selected");
+        if (state.placing && state.placing.slotId === slot.id && state.placing.itemId === item.id) {
+          tile.classList.add("placing");
+        }
 
-        tile.addEventListener("click", () => toggleSelect(slot.id, item.id));
+        tile.addEventListener("click", () => handleTileActivate(slot, item.id));
         tile.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            toggleSelect(slot.id, item.id);
+            handleTileActivate(slot, item.id);
           }
         });
 
@@ -318,6 +460,125 @@
       slotEl.appendChild(grid);
       slotsContainerEl.appendChild(slotEl);
     });
+  }
+
+  // List of every currently-placed instance in a MOLLE slot, each with its
+  // own remove button — needed because clicking the shared item tile can
+  // no longer mean "remove" once duplicates are allowed (see
+  // handleTileActivate).
+  function buildEquippedInstancesList(slot) {
+    const wrap = document.createElement("div");
+    wrap.className = "molle-instance-list";
+    const entries = state.selection[slot.id] || [];
+    if (entries.length === 0) return wrap;
+
+    const rows = getMolleRows(getAttachParent(slot), state.view);
+    entries.forEach((entry) => {
+      const item = findItem(slot.id, entry.itemId);
+      if (!item) return;
+      const rowIndex = rows.findIndex((r) => r.id === entry.row);
+      const row = document.createElement("div");
+      row.className = "molle-instance-row";
+      const label = document.createElement("span");
+      label.textContent = `${item.name} — Row ${rowIndex >= 0 ? rowIndex + 1 : "?"}`;
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "molle-instance-remove";
+      removeBtn.textContent = "×";
+      removeBtn.title = "Remove";
+      removeBtn.addEventListener("click", () => removeMolleInstance(slot.id, entry.instanceId));
+      row.appendChild(label);
+      row.appendChild(removeBtn);
+      wrap.appendChild(row);
+    });
+    return wrap;
+  }
+
+  function buildPlacementPanel(slot) {
+    const panel = document.createElement("div");
+    panel.className = "molle-placement";
+
+    const parentItem = getAttachParent(slot);
+    const item = findItem(slot.id, state.placing.itemId);
+    const rows = getMolleRows(parentItem, state.view);
+
+    const title = document.createElement("p");
+    title.className = "molle-placement-title";
+    title.textContent = `Placing: ${item ? item.name : ""}`;
+    panel.appendChild(title);
+
+    if (!rows.length) {
+      const none = document.createElement("p");
+      none.className = "slot-empty";
+      none.textContent = `No MOLLE rows defined for ${parentItem ? parentItem.name : "this"} in ${state.view} view.`;
+      panel.appendChild(none);
+      const cancelOnly = document.createElement("button");
+      cancelOnly.className = "btn btn-secondary";
+      cancelOnly.textContent = "Cancel";
+      cancelOnly.addEventListener("click", cancelPlacement);
+      panel.appendChild(cancelOnly);
+      return panel;
+    }
+
+    const rowButtons = document.createElement("div");
+    rowButtons.className = "molle-row-buttons";
+    rows.forEach((row, i) => {
+      const btn = document.createElement("button");
+      btn.className = "molle-row-btn";
+      btn.textContent = `Row ${i + 1}`;
+      if (state.placing.row === row.id) btn.classList.add("active");
+      btn.addEventListener("click", () => setPlacingRow(row.id));
+      rowButtons.appendChild(btn);
+    });
+    panel.appendChild(rowButtons);
+
+    const currentRow = rows.find((r) => r.id === state.placing.row) || rows[0];
+    const slideRow = document.createElement("div");
+    slideRow.className = "molle-slide-row";
+    const slideLabel = document.createElement("label");
+    slideLabel.textContent = "Position";
+    const slideInput = document.createElement("input");
+    slideInput.type = "range";
+    slideInput.min = String(-currentRow.halfWidth);
+    slideInput.max = String(currentRow.halfWidth);
+    slideInput.step = "0.5";
+    slideInput.value = String(state.placing.slide);
+    slideRow.appendChild(slideLabel);
+    slideRow.appendChild(slideInput);
+    panel.appendChild(slideRow);
+
+    const validityMsg = document.createElement("p");
+    validityMsg.className = "molle-validity";
+    panel.appendChild(validityMsg);
+
+    const actions = document.createElement("div");
+    actions.className = "molle-actions";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn btn-secondary";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", cancelPlacement);
+    const confirmBtn = document.createElement("button");
+    confirmBtn.className = "btn";
+    confirmBtn.textContent = "Confirm";
+    confirmBtn.addEventListener("click", confirmPlacement);
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    panel.appendChild(actions);
+
+    function refreshValidity() {
+      const valid = isPlacementValid();
+      confirmBtn.disabled = !valid;
+      validityMsg.textContent = valid ? "Position OK." : "Too close to another pouch on this row.";
+      validityMsg.classList.toggle("molle-validity-bad", !valid);
+    }
+
+    slideInput.addEventListener("input", () => {
+      state.placing.slide = parseFloat(slideInput.value);
+      renderStage();
+      refreshValidity();
+    });
+
+    refreshValidity();
+    return panel;
   }
 
   // Darker than the item's normal grading, on top of it — simulates being
@@ -356,7 +617,7 @@
         });
     }
 
-    layers.forEach(({ item, slotId }) => {
+    layers.forEach(({ item, slotId, molle }) => {
       const src = state.view === "rear" ? item.srcBack : item.src;
       if (!src) return; // no art for this view — skip rather than show the wrong side
 
@@ -366,10 +627,30 @@
       img.alt = item.name;
       img.dataset.itemId = item.id;
       img.dataset.slot = slotId;
-      img.style.cssText = layerStyle(item.transformKey || item.id, state.view);
+      img.style.cssText =
+        molle && molle.parentItem
+          ? molleLayerStyle(item, state.view, molle.parentItem, molle.row, molle.slide)
+          : layerStyle(item.transformKey || item.id, state.view);
       if (item.id === state.selectedItemId) img.classList.add("layer-selected");
       stageContentEl.appendChild(img);
     });
+
+    // Live preview of an unconfirmed MOLLE placement, dimmed so it reads as
+    // "not committed yet."
+    if (state.placing) {
+      const slot = SLOT_DEF_BY_ID[state.placing.slotId];
+      const parentItem = getAttachParent(slot);
+      const item = findItem(state.placing.slotId, state.placing.itemId);
+      const src = item && (state.view === "rear" ? item.srcBack : item.src);
+      if (item && parentItem && src) {
+        const img = document.createElement("img");
+        img.className = "layer layer-preview";
+        img.src = src;
+        img.alt = item.name;
+        img.style.cssText = molleLayerStyle(item, state.view, parentItem, state.placing.row, state.placing.slide);
+        stageContentEl.appendChild(img);
+      }
+    }
 
     if (!getBaseItem()) {
       const placeholder = document.createElement("div");
@@ -480,9 +761,15 @@
   function refreshAdminPanel() {
     if (!state.adminMode) return;
 
-    // Layer picker: every currently equipped item for this view.
+    // Layer picker: every currently equipped item for this view. A MOLLE
+    // pouch can have several instances (different rows) sharing one item
+    // id — its scale/grading is shared too, so list it once regardless of
+    // how many are placed.
     adminLayerListEl.innerHTML = "";
+    const seenItemIds = new Set();
     equippedLayers().forEach(({ item }) => {
+      if (seenItemIds.has(item.id)) return;
+      seenItemIds.add(item.id);
       const hasArt = state.view === "rear" ? !!item.srcBack : !!item.src;
       const btn = document.createElement("button");
       btn.className = "admin-layer-row";
@@ -512,8 +799,11 @@
       return;
     }
     const t = getTransform(item.transformKey || item.id, state.view);
-    adminItemNameEl.textContent = `${item.name} (${state.view})`;
+    const molleActive = isMolleSelected();
+    adminItemNameEl.textContent = `${item.name} (${state.view})${molleActive ? " — position via row/slide picker" : ""}`;
     fields.forEach((el) => (el.disabled = false));
+    adminXEl.disabled = molleActive;
+    adminYEl.disabled = molleActive;
     adminXEl.value = t.x;
     adminYEl.value = t.y;
     adminScaleEl.value = t.scale;
@@ -535,12 +825,21 @@
     return null;
   }
 
+  // True if the selected item is currently equipped via MOLLE attachment
+  // (any instance) — its position comes from the row/slide picker, not
+  // drag, and its scale is relative to the parent, so a scale change needs
+  // a full re-render rather than a single-element style patch.
+  function isMolleSelected() {
+    const layer = equippedLayers().find((l) => l.item.id === state.selectedItemId);
+    return !!(layer && layer.molle);
+  }
+
   // Dragging/scaling always act on the *selected* layer (picked from the
   // list above), never "whichever layer is under the cursor" — every layer
   // spans the full stage box, so z-order would otherwise make anything but
   // the topmost item unreachable.
   stageEl.addEventListener("mousedown", (e) => {
-    if (!state.adminMode || !state.selectedItemId) return;
+    if (!state.adminMode || !state.selectedItemId || isMolleSelected()) return;
     e.preventDefault();
 
     const itemId = state.selectedItemId;
@@ -583,7 +882,11 @@
       const current = getTransform(key, state.view);
       const next = clamp(current.scale - Math.sign(e.deltaY) * 0.02, 0.05, 10);
       setTransform(key, state.view, { scale: next });
-      updateLayerStyle(itemId);
+      if (isMolleSelected()) {
+        renderStage(); // scale is shared across every instance of this pouch
+      } else {
+        updateLayerStyle(itemId);
+      }
       refreshAdminPanel();
     },
     { passive: false }
