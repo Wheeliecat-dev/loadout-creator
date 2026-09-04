@@ -108,7 +108,7 @@ const GROUPS = [
 ];
 
 // Optional permanent presets. Keyed by slot id -> array of items.
-// Each item is { id, name, src, srcBack, transformKey, peekBehindBody }.
+// Each item is { id, name, src, srcBack, transformKey, peekBehindBody, zSlot }.
 //
 // - `srcBack` is optional — only needed if the item looks different from
 //   behind (e.g. a backpack, or a plate carrier's rear panel). Items
@@ -129,6 +129,12 @@ const GROUPS = [
 //   Calibrate the first variant, then give every other variant
 //   `transformKey: "<that variant's id>"` and they inherit it
 //   automatically (recalibrating one recalibrates all of them).
+// - `zSlot` is optional. An item normally stacks at its own slot's
+//   position in RENDER_ORDER; set `zSlot` to another slot's id to draw it
+//   there instead — e.g. a hooded winter jacket sets
+//   `zSlot: "headwearAccessories"` so it renders over the helmet rather
+//   than under it like every other Top item. Calibration is unaffected —
+//   it's still keyed by the item's own id/view (or its transformKey).
 //
 // Fill these in once final art assets exist (e.g.
 // src: "assets/top/plain_shirt.png").

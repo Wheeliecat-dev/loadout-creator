@@ -211,7 +211,15 @@
         if (item) layers.push({ item, slotId });
       });
     });
-    return layers;
+    // Most items stack at their own slot's RENDER_ORDER position, but a few
+    // need an exception (e.g. a hooded jacket drawn over the helmet instead
+    // of under it, like everything else in "top"). `item.zSlot` renders the
+    // item as if it belonged to that other slot instead — stable-sorted so
+    // items without an override keep their natural relative order.
+    return layers
+      .map((layer, i) => ({ layer, i, order: RENDER_ORDER.indexOf(layer.item.zSlot || layer.slotId) }))
+      .sort((a, b) => a.order - b.order || a.i - b.i)
+      .map(({ layer }) => layer);
   }
 
   // ---------- Rendering ----------

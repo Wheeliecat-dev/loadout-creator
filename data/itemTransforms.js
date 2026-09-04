@@ -276,6 +276,15 @@ const ITEM_TRANSFORMS = {
       "saturate": 1,
       "brightness": 1,
       "shadow": 0.35
+    },
+    "rear": {
+      "x": 1.5350877192982462,
+      "y": -18.467491881182518,
+      "scale": 0.5799999999999996,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.35
     }
   }
 };
