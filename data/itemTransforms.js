@@ -253,9 +253,10 @@ const ITEM_TRANSFORMS = {
       "y": -40.98848830473766,
       "scale": 0.17999999999999938,
       "hue": 0,
-      "saturate": 0.6,
-      "brightness": 1,
-      "shadow": 0.35
+      "saturate": 0.5,
+      "brightness": 1.2,
+      "shadow": 0.35,
+      "spread": 5
     },
     "rear": {
       "x": 1.157407407407407,

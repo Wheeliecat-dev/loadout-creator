@@ -978,8 +978,292 @@
     if (btn) setView(btn.dataset.view);
   });
 
+  // ---------- Named presets (local to this browser) ----------
+
+  const STORAGE_PRESETS = "loadoutCreator.presets";
+  const presetListEl = document.getElementById("preset-list");
+
+  function loadPresets() {
+    return safeParse(localStorage.getItem(STORAGE_PRESETS)) || {};
+  }
+
+  function persistPresets(presets) {
+    localStorage.setItem(STORAGE_PRESETS, JSON.stringify(presets));
+  }
+
+  // Replaces the whole loadout with `newSelection`, re-validating it against
+  // the slots that actually exist — used by both presets and shared codes,
+  // since either could be stale (an old preset referencing a slot that's
+  // since been removed, a code from a build with different items).
+  function applySelection(newSelection) {
+    const sanitized = {};
+    RENDER_ORDER.forEach((slotId) => {
+      if (slotId === "base") return;
+      const raw = newSelection ? newSelection[slotId] : undefined;
+      sanitized[slotId] = SLOT_TYPE_BY_ID[slotId] === "multi" ? (Array.isArray(raw) ? raw : []) : typeof raw === "string" ? raw : null;
+    });
+    state.selection = sanitized;
+    state.placing = null;
+    state.selectedItemId = null;
+    persistSelection();
+    renderSlots();
+    renderStage();
+    refreshAdminPanel();
+  }
+
+  function renderPresetList() {
+    const presets = loadPresets();
+    const names = Object.keys(presets);
+    presetListEl.innerHTML = "";
+    if (names.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "slot-empty";
+      empty.textContent = "No saved presets yet.";
+      presetListEl.appendChild(empty);
+      return;
+    }
+    names.forEach((name) => {
+      const row = document.createElement("div");
+      row.className = "preset-row";
+      const loadBtn = document.createElement("button");
+      loadBtn.className = "preset-load-btn";
+      loadBtn.textContent = name;
+      loadBtn.title = `Load "${name}"`;
+      loadBtn.addEventListener("click", () => applySelection(presets[name]));
+      const delBtn = document.createElement("button");
+      delBtn.className = "preset-delete-btn";
+      delBtn.textContent = "×";
+      delBtn.title = "Delete preset";
+      delBtn.addEventListener("click", () => {
+        const all = loadPresets();
+        delete all[name];
+        persistPresets(all);
+        renderPresetList();
+      });
+      row.appendChild(loadBtn);
+      row.appendChild(delBtn);
+      presetListEl.appendChild(row);
+    });
+  }
+
+  document.getElementById("save-preset-btn").addEventListener("click", () => {
+    const name = (prompt("Name this preset:") || "").trim();
+    if (!name) return;
+    const presets = loadPresets();
+    presets[name] = state.selection;
+    persistPresets(presets);
+    renderPresetList();
+  });
+
+  // ---------- Shareable loadout codes ----------
+  // The code is just the selection, base64url-encoded — nothing about
+  // calibration (that's site-wide already) or which vest/view is active.
+
+  function encodeSelection(selection) {
+    const json = JSON.stringify(selection);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function decodeSelectionCode(code) {
+    try {
+      let b64 = code.replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      return JSON.parse(decodeURIComponent(escape(atob(b64))));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Accepts either a bare code or a full share URL someone pasted.
+  function extractCode(input) {
+    const trimmed = input.trim();
+    try {
+      const url = new URL(trimmed);
+      const fromUrl = url.searchParams.get("loadout");
+      if (fromUrl) return fromUrl;
+    } catch (e) {
+      // not a URL — treat the whole thing as the code
+    }
+    return trimmed;
+  }
+
+  const shareStatusEl = document.getElementById("share-status");
+
+  document.getElementById("share-btn").addEventListener("click", () => {
+    const code = encodeSelection(state.selection);
+    const url = `${location.origin}${location.pathname}?loadout=${code}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        shareStatusEl.textContent = "Link copied to clipboard.";
+      })
+      .catch(() => {
+        shareStatusEl.textContent = url; // clipboard blocked — show it so it can be copied by hand
+      });
+  });
+
+  document.getElementById("import-code-btn").addEventListener("click", () => {
+    const input = document.getElementById("import-code-input");
+    const code = extractCode(input.value);
+    if (!code) return;
+    const decoded = decodeSelectionCode(code);
+    if (!decoded) {
+      shareStatusEl.textContent = "That code doesn't look valid.";
+      return;
+    }
+    applySelection(decoded);
+    input.value = "";
+    shareStatusEl.textContent = "Loadout loaded.";
+  });
+
+  // ---------- Export as image ----------
+  // Reuses the exact same style-computation functions the stage itself
+  // uses (layerStyle/molleLayerStyle/peekLayerStyle), just parsed back out
+  // of their CSS text instead of applied to a DOM element, so the export
+  // can never visually drift from what's actually on screen.
+
+  const imageCache = new Map();
+
+  function loadImageCached(src) {
+    if (imageCache.has(src)) return imageCache.get(src);
+    const promise = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+    imageCache.set(src, promise);
+    return promise;
+  }
+
+  function parseLayerStyle(cssText) {
+    const m = cssText.match(/translate\(([-\d.]+)%,\s*([-\d.]+)%\)\s*scale\(([-\d.]+)\)/);
+    const filterMatch = cssText.match(/filter:\s*([^;]+);?/);
+    return {
+      x: m ? parseFloat(m[1]) : 0,
+      y: m ? parseFloat(m[2]) : 0,
+      scale: m ? parseFloat(m[3]) : 1,
+      filter: filterMatch ? filterMatch[1] : "none",
+    };
+  }
+
+  // Same math as the CSS: an object-fit:contain image, scaled/translated
+  // about the box's own center — see molleLayerStyle's derivation.
+  function computeDestRect(boxW, boxH, xPct, yPct, scale, naturalW, naturalH) {
+    const boxAspect = boxW / boxH;
+    const imgAspect = naturalW / naturalH;
+    const containW = imgAspect > boxAspect ? boxW : boxH * imgAspect;
+    const containH = imgAspect > boxAspect ? boxW / imgAspect : boxH;
+    const rx = (boxW - containW) / 2;
+    const ry = (boxH - containH) / 2;
+    const cx = boxW / 2;
+    const cy = boxH / 2;
+    const tx = (xPct / 100) * boxW;
+    const ty = (yPct / 100) * boxH;
+    return {
+      destW: containW * scale,
+      destH: containH * scale,
+      destX: cx + (rx - cx) * scale + tx,
+      destY: cy + (ry - cy) * scale + ty,
+    };
+  }
+
+  // Gathers the same layer list renderStage() would, for an arbitrary view
+  // (not necessarily the one currently on screen) — done by borrowing
+  // state.view briefly so the existing style functions (which read it
+  // internally) compute for that view without needing their own
+  // refactor.
+  function layersForExport(view) {
+    const previousView = state.view;
+    state.view = view;
+    const out = [];
+    if (view === "front") {
+      equippedLayers()
+        .filter(({ item }) => item.peekBehindBody && item.srcBack)
+        .forEach(({ item }) => {
+          out.push({ src: item.srcBack, styleText: peekLayerStyle(item.transformKey || item.id) });
+        });
+    }
+    equippedLayers().forEach(({ item, molle }) => {
+      const src = view === "rear" ? item.srcBack : item.src;
+      if (!src) return;
+      const styleText =
+        molle && molle.parentItem
+          ? molleLayerStyle(item, view, molle.parentItem, molle.row, molle.slide, molle.jitter)
+          : layerStyle(item.transformKey || item.id, view);
+      out.push({ src, styleText });
+    });
+    state.view = previousView;
+    return out;
+  }
+
+  async function drawViewInto(ctx, view, offsetX, offsetY, w, h) {
+    const layers = layersForExport(view);
+    for (const layer of layers) {
+      let img;
+      try {
+        img = await loadImageCached(layer.src);
+      } catch (e) {
+        continue; // skip a layer whose image failed to load rather than aborting the whole export
+      }
+      const { x, y, scale, filter } = parseLayerStyle(layer.styleText);
+      const rect = computeDestRect(w, h, x, y, scale, img.naturalWidth, img.naturalHeight);
+      ctx.save();
+      ctx.filter = filter;
+      ctx.drawImage(img, offsetX + rect.destX, offsetY + rect.destY, rect.destW, rect.destH);
+      ctx.restore();
+    }
+  }
+
+  document.getElementById("export-image-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("export-image-btn");
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Exporting…";
+    try {
+      const REGION_W = 600;
+      const REGION_H = 532;
+      const GAP = 24;
+      const canvas = document.createElement("canvas");
+      canvas.width = REGION_W * 2 + GAP;
+      canvas.height = REGION_H;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#16181d";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      await drawViewInto(ctx, "front", 0, 0, REGION_W, REGION_H);
+      await drawViewInto(ctx, "rear", REGION_W + GAP, 0, REGION_W, REGION_H);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "loadout.png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  });
+
   renderGroupNav();
   renderSlots();
   setView(state.view);
   applyViewTransform();
+  renderPresetList();
+
+  // A shared link takes priority over whatever's in localStorage — opening
+  // one should show exactly that build.
+  (function loadFromUrlIfPresent() {
+    const code = new URLSearchParams(location.search).get("loadout");
+    if (!code) return;
+    const decoded = decodeSelectionCode(code);
+    if (decoded) applySelection(decoded);
+  })();
 })();

@@ -11,7 +11,25 @@
   <aside class="sidebar">
     <h1 class="app-title">Loadout Creator</h1>
     <nav class="group-nav" id="group-nav"></nav>
+
+    <div class="sidebar-section">
+      <h4 class="sidebar-section-title">Presets</h4>
+      <div id="preset-list" class="preset-list"></div>
+      <button id="save-preset-btn" class="btn btn-secondary">+ Save Current</button>
+    </div>
+
+    <div class="sidebar-section">
+      <h4 class="sidebar-section-title">Share</h4>
+      <button id="share-btn" class="btn btn-secondary">Copy Share Link</button>
+      <div class="share-import-row">
+        <input type="text" id="import-code-input" placeholder="Paste code or link">
+        <button id="import-code-btn" class="btn btn-secondary">Load</button>
+      </div>
+      <p id="share-status" class="admin-status"></p>
+    </div>
+
     <div class="sidebar-actions">
+      <button id="export-image-btn" class="btn btn-secondary">Export as Image</button>
       <button id="reset-btn" class="btn btn-secondary">Reset Loadout</button>
       <button id="admin-toggle-btn" class="btn btn-secondary">Admin Mode</button>
     </div>
