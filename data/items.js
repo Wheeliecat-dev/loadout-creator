@@ -79,7 +79,9 @@ const GROUPS = [
       // Renders above literally everything (see RENDER_ORDER) — a
       // backpack sits over headwear too, not just the torso layers.
       { id: "vestRearAcc", label: "Backpack", type: "single" },
-      { id: "vestPatchesRear", label: "Patches (Rear)", type: "multi", dependsOn: "vest" },
+      // Sits on top of the backpack itself, so it depends on the
+      // backpack being worn, not just the vest — see beltRear's note.
+      { id: "vestPatchesRear", label: "Patches (Rear)", type: "multi", dependsOn: "vestRearAcc" },
     ],
   },
   {
@@ -108,9 +110,14 @@ const GROUPS = [
 ];
 
 // Optional permanent presets. Keyed by slot id -> array of items.
-// Each item is { id, name, src, srcBack, transformKey, peekBehindBody, zSlot,
-// companions }.
+// Each item is { id, name, src, srcBack, thumb, transformKey, peekBehindBody,
+// zSlot, companions }.
 //
+// - `thumb` is optional: overrides which image shows in the item-picker
+//   tile. Defaults to `src`, falling back to `srcBack` for rear-only items.
+//   Use it when the more "recognizable" view isn't the one worn on the
+//   body's front — e.g. the backpack's front is just straps, so its thumb
+//   points at the rear art instead.
 // - `srcBack` is optional — only needed if the item looks different from
 //   behind (e.g. a backpack, or a plate carrier's rear panel). Items
 //   without a srcBack simply don't render while viewing from the rear.
@@ -296,6 +303,9 @@ const DEFAULT_ITEMS = {
       name: "MM14 Backpack",
       src: "assets/VestRearAcc/mm14_backpack_front.png",
       srcBack: "assets/VestRearAcc/mm14_backpack_rear.png",
+      // Front art is just straps — the back view is what's recognizable
+      // as "a backpack" in a small picker thumbnail.
+      thumb: "assets/VestRearAcc/mm14_backpack_rear.png",
     },
   ],
   headwear: [

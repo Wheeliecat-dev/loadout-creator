@@ -296,7 +296,10 @@
 
       items.forEach((item) => {
         const tile = itemTileTemplate.content.firstElementChild.cloneNode(true);
-        tile.querySelector("img").src = item.src || item.srcBack; // rear-only items have no `src`
+        // Picker thumbnail: explicit `thumb` override wins (e.g. a backpack
+        // whose front is just straps — the back view reads better as a
+        // thumbnail); otherwise front art, falling back to rear-only items.
+        tile.querySelector("img").src = item.thumb || item.src || item.srcBack;
         tile.querySelector("img").alt = item.name;
         tile.querySelector(".item-name").textContent = item.name;
         if (isSelected(slot.id, item.id)) tile.classList.add("selected");
