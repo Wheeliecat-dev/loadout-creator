@@ -208,7 +208,13 @@
       }
       ids.forEach((itemId) => {
         const item = slotId === "base" ? baseItem : findItem(slotId, itemId);
-        if (item) layers.push({ item, slotId });
+        if (!item) return;
+        layers.push({ item, slotId });
+        // Companions ride along with their parent — always equipped when
+        // it is, never separately pickable — e.g. a jacket's hood, drawn
+        // over the helmet via its own zSlot while the jacket itself stays
+        // under the belt/vest at its normal position.
+        (item.companions || []).forEach((companion) => layers.push({ item: companion, slotId }));
       });
     });
     // Most items stack at their own slot's RENDER_ORDER position, but a few
@@ -517,8 +523,11 @@
 
   function findItemAnywhere(itemId) {
     for (const slotId of Object.keys(state.items)) {
-      const found = (state.items[slotId] || []).find((i) => i.id === itemId);
-      if (found) return found;
+      for (const item of state.items[slotId] || []) {
+        if (item.id === itemId) return item;
+        const companion = (item.companions || []).find((c) => c.id === itemId);
+        if (companion) return companion;
+      }
     }
     return null;
   }

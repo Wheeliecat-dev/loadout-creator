@@ -282,8 +282,8 @@ const ITEM_TRANSFORMS = {
       "y": -18.467491881182518,
       "scale": 0.5799999999999996,
       "hue": 0,
-      "saturate": 1,
-      "brightness": 1,
+      "saturate": 0.85,
+      "brightness": 1.4,
       "shadow": 0.35
     }
   }

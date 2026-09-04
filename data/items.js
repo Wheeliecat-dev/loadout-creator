@@ -108,7 +108,8 @@ const GROUPS = [
 ];
 
 // Optional permanent presets. Keyed by slot id -> array of items.
-// Each item is { id, name, src, srcBack, transformKey, peekBehindBody, zSlot }.
+// Each item is { id, name, src, srcBack, transformKey, peekBehindBody, zSlot,
+// companions }.
 //
 // - `srcBack` is optional — only needed if the item looks different from
 //   behind (e.g. a backpack, or a plate carrier's rear panel). Items
@@ -135,6 +136,16 @@ const GROUPS = [
 //   `zSlot: "headwearAccessories"` so it renders over the helmet rather
 //   than under it like every other Top item. Calibration is unaffected —
 //   it's still keyed by the item's own id/view (or its transformKey).
+// - `companions` is optional: an array of mini-items (same shape, minus
+//   `companions` itself) that render automatically whenever their parent
+//   is equipped. They're never their own pickable tile — only the parent
+//   shows in the item grid — but each still gets its own row in Admin
+//   Mode's layer list, so its position/scale/grading is calibrated
+//   independently. Built for exactly this jacket: the body stays a
+//   normal Top item (under belt/vest) while the hood is a companion with
+//   `zSlot: "headwearAccessories"` so it draws over the helmet — one flat
+//   image can't occupy two stack positions, so the hood had to become a
+//   second layer to get both right at once.
 //
 // Fill these in once final art assets exist (e.g.
 // src: "assets/top/plain_shirt.png").
@@ -171,6 +182,18 @@ const DEFAULT_ITEMS = {
       name: "MM14 Winter Jacket",
       src: "assets/Top/mm14_winter_jacket_front.png",
       srcBack: "assets/Top/mm14_winter_jacket_back.png",
+      // The hood is a separate image so it can render over the helmet
+      // (via zSlot) while the jacket body stays under the belt/vest at
+      // the normal Top position. Front hood art can be added the same
+      // way later — for now it's rear-only.
+      companions: [
+        {
+          id: "top-mm14-winter-jacket-hood",
+          name: "Winter Jacket Hood",
+          srcBack: "assets/Top/mm14_winter_jacket_hood_back.png",
+          zSlot: "headwearAccessories",
+        },
+      ],
     },
   ],
   bottom: [
