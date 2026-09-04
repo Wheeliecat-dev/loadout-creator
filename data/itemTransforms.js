@@ -286,5 +286,27 @@ const ITEM_TRANSFORMS = {
       "brightness": 1.4,
       "shadow": 0.35
     }
+  },
+  "top-mm14-winter-jacket-hood": {
+    "rear": {
+      "x": 1.6880341880341967,
+      "y": -36.99206048864616,
+      "scale": 0.1399999999999994,
+      "hue": 0,
+      "saturate": 1,
+      "brightness": 1,
+      "shadow": 0.85
+    }
+  },
+  "vest-mtac-qrs": {
+    "rear": {
+      "x": 2.0833333333333366,
+      "y": -19.58048804366452,
+      "scale": 0.3199999999999994,
+      "hue": -6,
+      "saturate": 0.8,
+      "brightness": 1,
+      "shadow": 0.35
+    }
   }
 };

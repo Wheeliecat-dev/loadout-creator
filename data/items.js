@@ -252,6 +252,12 @@ const DEFAULT_ITEMS = {
       src: "assets/vest/m3mp6_front.png",
       srcBack: "assets/vest/m3mp6_back.png",
     },
+    {
+      id: "vest-mtac-qrs",
+      name: "M-TAC QRS",
+      src: "assets/vest/mtac_qrs_front.png",
+      srcBack: "assets/vest/mtac_qrs_back.png",
+    },
   ],
   // Same patch art registered on both sides — a flat patch like this can
   // reasonably go on either. Each has its own independent calibration
